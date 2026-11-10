@@ -2,6 +2,7 @@
 <html lang="id">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>MERDEKA - Perang Merebut Kemerdekaan</title>
 <style>
   body {
@@ -23,12 +24,12 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 24px;
-    margin: 5px 0 15px 0;
+    gap: 16px;
+    margin: 5px 0 10px 0;
   }
   .flag-wrap {
-    width: 70px;
-    height: 50px;
+    width: 50px;
+    height: 36px;
     perspective: 200px;
     flex-shrink: 0;
   }
@@ -64,82 +65,86 @@
   }
   .title-block { text-align: center; }
   .title-block h1 {
-    margin: 0; font-size: 32px; letter-spacing: 4px; color: #ffcc66;
+    margin: 0; font-size: 24px; letter-spacing: 2px; color: #ffcc66;
     text-shadow: 0 2px 6px rgba(0,0,0,0.8), 0 0 12px rgba(255,80,0,0.4);
   }
   .title-block p {
-    margin: 4px 0 0 0; font-size: 14px; letter-spacing: 2px; color: #ffd9a0;
+    margin: 2px 0 0 0; font-size: 11px; letter-spacing: 1px; color: #ffd9a0;
     text-shadow: 0 1px 3px rgba(0,0,0,0.7);
   }
 
   #canvasWrap {
-    position: relative; border: 3px solid #334; border-radius: 12px;
-    box-shadow: 0 8px 30px rgba(0,0,0,0.8); max-width: 100%; max-height: 60vh;
+    position: relative; border: 2px solid #334; border-radius: 10px;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.8); width: 100%; max-width: 900px;
     display: flex; justify-content: center; background: #000; overflow: hidden;
   }
-  canvas { display: block; background: #87CEEB; max-width: 100%; max-height: 100%; object-fit: contain; }
+  canvas { display: block; background: #87CEEB; width: 100%; height: auto; max-height: 55vh; object-fit: contain; }
 
   .controls {
-    margin-top: 15px; display: grid; grid-template-columns: repeat(2, minmax(280px, 1fr));
-    gap: 12px 30px; background: #16213e; padding: 18px 24px; border-radius: 12px;
-    width: 900px; max-width: 95vw; box-sizing: border-box; box-shadow: 0 6px 20px rgba(0,0,0,0.6);
+    margin-top: 10px; display: grid; grid-template-columns: 1fr;
+    gap: 10px; background: #16213e; padding: 12px; border-radius: 10px;
+    width: 100%; max-width: 900px; box-sizing: border-box; box-shadow: 0 4px 15px rgba(0,0,0,0.6);
     border: 1px solid #2a3b5c;
   }
-  .ctrl { display: flex; align-items: center; gap: 12px; font-size: 14px; }
-  .ctrl label { min-width: 140px; color: #9ab; font-weight: 500; }
-  .ctrl input[type=range] { flex: 1; accent-color: #ff6633; cursor: pointer; }
-  .ctrl .val { min-width: 60px; text-align: right; color: #ffcc66; font-weight: bold; font-family: monospace; }
+  .ctrl { display: flex; align-items: center; gap: 10px; font-size: 13px; }
+  .ctrl label { min-width: 120px; color: #9ab; font-weight: 500; font-size: 12px; }
+  .ctrl input[type=range] { flex: 1; accent-color: #ff6633; cursor: pointer; height: 24px; }
+  .ctrl .val { min-width: 45px; text-align: right; color: #ffcc66; font-weight: bold; font-family: monospace; }
   
   .btn-group {
-    grid-column: span 2;
     display: flex;
-    gap: 15px;
+    gap: 10px;
+    width: 100%;
   }
   button {
-    flex: 1; padding: 14px; background: linear-gradient(180deg, #ff7733 0%, #ff4400 100%);
+    flex: 1; padding: 12px; background: linear-gradient(180deg, #ff7733 0%, #ff4400 100%);
     border: none; color: white; font-weight: bold; border-radius: 8px; cursor: pointer;
-    font-size: 15px; transition: all 0.1s; text-transform: uppercase;
-    letter-spacing: 1.5px; box-shadow: 0 5px 0 #aa2200;
+    font-size: 14px; text-transform: uppercase; letter-spacing: 1px; box-shadow: 0 4px 0 #aa2200;
     text-shadow: 0 1px 2px rgba(0,0,0,0.4);
+    touch-action: manipulation;
   }
   button.quiz-btn {
     background: linear-gradient(180deg, #3399ff 0%, #0055ff 100%);
-    box-shadow: 0 5px 0 #0022aa;
+    box-shadow: 0 4px 0 #0022aa;
   }
   button:hover { filter: brightness(1.1); }
-  button:active { transform: translateY(5px); box-shadow: none; }
+  button:active { transform: translateY(4px); box-shadow: none; }
 
   /* ===== MODAL KUIS ===== */
   #quizModal {
     display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
     background: rgba(0,0,0,0.85); z-index: 1000; justify-content: center; align-items: center;
+    padding: 15px; box-sizing: border-box;
   }
   .quiz-content {
-    background: #16213e; border: 2px solid #334e68; padding: 30px; border-radius: 12px;
-    width: 600px; max-width: 90vw; max-height: 90vh; overflow-y: auto;
+    background: #16213e; border: 2px solid #334e68; padding: 20px; border-radius: 12px;
+    width: 100%; max-width: 500px; max-height: 85vh; overflow-y: auto;
     box-shadow: 0 10px 30px rgba(0,0,0,0.8);
   }
-  .quiz-content h2 { margin-top: 0; color: #ffcc66; text-align: center; letter-spacing: 2px; }
-  .question-box { background: #0f172a; padding: 15px; border-radius: 8px; margin-bottom: 15px; border-left: 4px solid #ff6633; }
-  .question-box p { margin: 0 0 10px 0; font-size: 15px; line-height: 1.4; color: #f1f5f9; }
-  .quiz-options { display: flex; gap: 10px; }
+  .quiz-content h2 { margin-top: 0; font-size: 18px; color: #ffcc66; text-align: center; letter-spacing: 1px; }
+  .question-box { background: #0f172a; padding: 12px; border-radius: 8px; margin-bottom: 12px; border-left: 4px solid #ff6633; }
+  .question-box p { margin: 0 0 8px 0; font-size: 13px; line-height: 1.4; color: #f1f5f9; }
+  .quiz-options { display: flex; gap: 8px; }
   .quiz-options button {
-    flex: 1; padding: 10px; font-size: 14px; background: #334155; box-shadow: 0 3px 0 #1e293b; margin: 0;
+    flex: 1; padding: 10px; font-size: 12px; background: #334155; box-shadow: 0 3px 0 #1e293b; margin: 0;
   }
   .quiz-options button.true-btn { background: linear-gradient(180deg, #22c55e 0%, #15803d 100%); box-shadow: 0 3px 0 #14532d; }
   .quiz-options button.false-btn { background: linear-gradient(180deg, #ef4444 0%, #b91c1c 100%); box-shadow: 0 3px 0 #7f1d1d; }
   .quiz-options button:disabled { opacity: 0.6; cursor: not-allowed; transform: none !important; box-shadow: none !important; }
-  .feedback { margin-top: 6px; font-size: 13px; font-weight: bold; }
-  .close-quiz { background: #475569; box-shadow: 0 4px 0 #334155; margin-top: 15px; width: 100%; }
+  .feedback { margin-top: 5px; font-size: 12px; font-weight: bold; }
+  .close-quiz { background: #475569; box-shadow: 0 4px 0 #334155; margin-top: 10px; width: 100%; font-size: 14px; padding: 12px; }
 
-  @media (max-width: 700px) {
-    .controls { grid-template-columns: 1fr; padding: 12px; }
-    .btn-group { flex-direction: column; grid-column: span 1; }
-    .ctrl label { min-width: 110px; }
-    .header { gap: 10px; }
-    .flag-wrap { width: 50px; height: 36px; }
-    .title-block h1 { font-size: 24px; letter-spacing: 2px; }
-    .title-block p { font-size: 11px; }
+  @media (min-width: 768px) {
+    .controls { grid-template-columns: repeat(2, minmax(280px, 1fr)); padding: 18px 24px; gap: 12px 30px; }
+    .ctrl label { min-width: 140px; font-size: 14px; }
+    .title-block h1 { font-size: 32px; letter-spacing: 4px; }
+    .title-block p { font-size: 14px; letter-spacing: 2px; }
+    .header { gap: 24px; }
+    .flag-wrap { width: 70px; height: 50px; }
+    .quiz-content { padding: 30px; max-width: 600px; }
+    .quiz-content h2 { font-size: 22px; }
+    .question-box p { font-size: 15px; }
+    .quiz-options button { font-size: 14px; }
   }
 </style>
 </head>
@@ -179,7 +184,7 @@
     <input type="range" id="dy" min="50" max="400" value="200" step="10">
     <span class="val" id="dyV">200</span>
   </div>
-  <div class="btn-group">
+  <div class="btn-group" style="grid-column: 1 / -1;">
     <button id="fireBtn">🔥 TEMBAK PEMAIN</button>
     <button id="quizBtn" class="quiz-btn">🎯 KUIS MERDEKA</button>
   </div>
@@ -189,7 +194,7 @@
 <div id="quizModal">
   <div class="quiz-content">
     <h2>KUIS TAKTIS: FISIKA MEDAN PERANG</h2>
-    <p id="quizScoreText" style="text-align: center; color: #ffcc66; font-weight: bold; margin-bottom: 15px;">Skor: 0 / 5</p>
+    <p id="quizScoreText" style="text-align: center; color: #ffcc66; font-weight: bold; margin-bottom: 12px; font-size: 14px;">Skor: 0 / 5</p>
     <div id="quizQuestionsContainer"></div>
     <button class="close-quiz" onclick="closeQuiz()">Tutup Kuis & Lanjutkan Perang</button>
   </div>
@@ -1089,7 +1094,7 @@ function renderQuizQuestions() {
   const container = document.getElementById('quizQuestionsContainer');
   container.innerHTML = '';
   
-  quizData.forEach((item, index) => {
+  quizData.horizontal || quizData.forEach((item, index) => {
     const isAnswered = answeredStatus[index] !== undefined;
     const userAns = answeredStatus[index];
     
