@@ -19,7 +19,6 @@
     box-sizing: border-box;
   }
 
-  /* ===== HEADER DENGAN BENDERA BERKIBAR ===== */
   .header {
     display: flex;
     align-items: center;
@@ -110,7 +109,6 @@
   button:hover { filter: brightness(1.1); }
   button:active { transform: translateY(4px); box-shadow: none; }
 
-  /* ===== MODAL KUIS ===== */
   #quizModal {
     display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
     background: rgba(0,0,0,0.85); z-index: 1000; justify-content: center; align-items: center;
@@ -190,7 +188,6 @@
   </div>
 </div>
 
-<!-- MODAL KUIS FISIKA -->
 <div id="quizModal">
   <div class="quiz-content">
     <h2>KUIS TAKTIS: FISIKA MEDAN PERANG</h2>
@@ -206,7 +203,6 @@ const ctx = cv.getContext('2d');
 const W = cv.width, H = cv.height;
 const GROUND_Y = H * 0.65;
 
-// ================= AUDIO ENGINE =================
 let audioCtx, distortionNode;
 function initAudio() {
   if (!audioCtx) {
@@ -303,7 +299,6 @@ function startHeliSound() {
   heliOsc.start(); lfo.start();
 }
 
-// ================= SLIDER & PARAMETER =================
 const angleEl = document.getElementById('angle'), speedEl = document.getElementById('speed');
 const dxEl = document.getElementById('dx'), dyEl = document.getElementById('dy');
 const angleV = document.getElementById('angleV'), speedV = document.getElementById('speedV');
@@ -323,28 +318,62 @@ function updateParams() {
 [angleEl, speedEl, dxEl, dyEl].forEach(el => el.addEventListener('input', updateParams));
 updateParams();
 
-// ================= STATE =================
-let projectile = null, bomb = null, explosions = [], particles = [], bloodParticles = [], bloodStains = [];
+let projectile = null, explosions = [], particles = [], bloodParticles = [], bloodStains = [];
 let infantryBullets = [], heliBullets = [];
-let time = 0, heliDir = 1, heliX = 700, bomberX = W + 100;
+let time = 0, heliDir = 1, heliX = 700;
 let shakeTime = 0, shakeMag = 0, heliMuzzleFlash = 0;
 
 let allies = [], enemies = [], airborneParatroopers = [];
 let enemyCannon = null;
 let enemyProjectiles = [];
+let grenades = [];
+let fighterBullets = [];
+let fighterPlane = {
+  x: -100, y: 40, dir: 1, speed: 6, fireCooldown: 0
+};
+
+// Satu-satunya Pesawat Pengangkut Penerjun Payung
+let transportPlane = { 
+  x: -100, y: 80, dir: 1, speed: 4.5, dropCooldown: 0, 
+  hp: 200, isFalling: false, fallVy: 0, fallVx: 0,
+  isEvading: false, evadeTimer: 0, evadeDir: 1
+};
+
+let targetPlaneObj = { x: 700, y: targetY, dir: 1, speed: 3.5 };
+
+let bomberPlanes = [
+  { x: W + 100, y: 70, dir: -1, speed: 7.5, phase: 0, bombTimer: 0, hp: 100, isFalling: false, fallVy: 0, fallVx: 0, isEvading: false, evadeTimer: 0 },
+  { x: W + 200, y: 70, dir: -1, speed: 7.5, phase: Math.PI, bombTimer: 0, hp: 100, isFalling: false, fallVy: 0, fallVx: 0, isEvading: false, evadeTimer: 0 }
+];
+let bombs = [];
 
 function spawnSoldiers() {
-  allies = []; enemies = []; airborneParatroopers = []; enemyProjectiles = [];
+  allies = []; enemies = []; airborneParatroopers = []; enemyProjectiles = []; grenades = []; fighterBullets = [];
+  
+  transportPlane = { 
+    x: -100, y: 80, dir: 1, speed: 4.5, dropCooldown: 0, 
+    hp: 200, isFalling: false, fallVy: 0, fallVx: 0,
+    isEvading: false, evadeTimer: 0, evadeDir: 1
+  };
+  bomberPlanes = [
+    { x: W + 100, y: 70, dir: -1, speed: 7.5, phase: 0, bombTimer: 0, hp: 100, isFalling: false, fallVy: 0, fallVx: 0, isEvading: false, evadeTimer: 0 },
+    { x: W + 200, y: 70, dir: -1, speed: 7.5, phase: Math.PI, bombTimer: 0, hp: 100, isFalling: false, fallVy: 0, fallVx: 0, isEvading: false, evadeTimer: 0 }
+  ];
+  fighterPlane = { x: -100, y: 40, dir: 1, speed: 6, fireCooldown: 0 };
+
   for (let i = 0; i < 20; i++) {
     const spawnX = 30 + Math.random() * 300;
-    allies.push({ x: spawnX, homeX: spawnX, y: GROUND_Y + 12, vx: 0, vy: 0, rot: 0, vRot: 0, facing: 1, dead: false, respawnTimer: 0, fireTimer: Math.random() * 30, breathPhase: Math.random() * Math.PI * 2, state: 'prone', stateTimer: 100 + Math.random() * 300, runTargetX: 0, runDir: -1 });
+    allies.push({ 
+      x: spawnX, homeX: spawnX, y: GROUND_Y + 12, vx: 0, vy: 0, rot: 0, vRot: 0, facing: 1, 
+      dead: false, respawnTimer: 0, fireTimer: Math.random() * 30, breathPhase: Math.random() * Math.PI * 2, 
+      state: 'prone', stateTimer: 100 + Math.random() * 300, runTargetX: 0, runDir: -1,
+      isGrenadier: i === 0
+    });
   }
   for (let i = 0; i < 22; i++) {
     const spawnX = 450 + Math.random() * 380;
     enemies.push({ x: spawnX, homeX: spawnX, y: GROUND_Y + 12, vx: 0, vy: 0, rot: 0, vRot: 0, facing: -1, dead: false, respawnTimer: 0, fireTimer: Math.random() * 30, breathPhase: Math.random() * Math.PI * 2, state: 'prone', stateTimer: 100 + Math.random() * 300, runTargetX: 0, runDir: 1 });
   }
-  
-  // Posisi meriam musuh di dekat pohon (X: 820)
   enemyCannon = { x: 820, y: GROUND_Y + 10, angle: -0.5, fireTimer: 0, recoil: 0 };
 }
 spawnSoldiers();
@@ -365,13 +394,11 @@ function fire() {
   const sp = params.speed * 0.15;
 
   projectile = { x: muzzleX, y: muzzleY, vx: Math.cos(rad)*sp, vy: -Math.sin(rad)*sp, trail: [] };
-
   particles.push({ x: muzzleX, y: muzzleY, vx: 0, vy: 0, life: 0.8, decay: 0.1, size: 25, type: 'fire' });
   explosions.push({ x: muzzleX, y: muzzleY, t: 0, maxT: 10, size: 20, isFlash: true });
   playShootSound();
 }
 
-// ================= LEDAKAN & PARTIKEL =================
 function createBigExplosion(x, y) {
   shakeTime = 35; shakeMag = 18;
   playMegaExplosionSound();
@@ -406,6 +433,34 @@ function createBigExplosion(x, y) {
   });
 }
 
+function createGrenadeExplosion(x, y) {
+  shakeTime = 15; shakeMag = 10;
+  playMegaExplosionSound();
+  explosions.push({ x, y, t: 0, maxT: 20, size: 50, isShockwave: true });
+
+  for (let i = 0; i < 50; i++) {
+    const angle = Math.random() * Math.PI * 2, speed = 1 + Math.random() * 8;
+    particles.push({ x, y, vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed - 2, life: 1.0, decay: 0.02, size: 15 + Math.random() * 20, type: 'fire' });
+  }
+  for (let i = 0; i < 20; i++) {
+    particles.push({ x: x + (Math.random() - 0.5) * 20, y: y + (Math.random() - 0.5) * 20, vx: (Math.random() - 0.5) * 3, vy: -1 - Math.random() * 4, life: 1.0, decay: 0.01, size: 20 + Math.random() * 30, type: 'smoke' });
+  }
+
+  const allUnits = [...allies, ...enemies];
+  allUnits.forEach(u => {
+    if (u.dead) return;
+    const dx = u.x - x, dy = u.y - y, dist = Math.hypot(dx, dy);
+    if (dist < 80) {
+      u.dead = true; u.respawnTimer = 0;
+      u.vx = (dx / dist) * (10 + Math.random() * 10) * (1 - dist/80);
+      u.vy = -10 - Math.random() * 8;
+      u.vRot = (Math.random() - 0.5) * 0.8;
+      createBloodBurst(u.x, u.y - 15, 25);
+      playScreamSound();
+    }
+  });
+}
+
 function createBloodBurst(x, y, count) {
   for (let i = 0; i < count; i++) {
     const angle = Math.random() * Math.PI * 2, speed = 2 + Math.random() * 6;
@@ -414,7 +469,6 @@ function createBloodBurst(x, y, count) {
   bloodStains.push({ x, y: GROUND_Y + 8, size: 15 + Math.random() * 10, life: 1.0, decay: 0.003 });
 }
 
-// ================= GAMBAR OBJEK =================
 function drawSky() {
   const g = ctx.createLinearGradient(0, 0, 0, GROUND_Y);
   g.addColorStop(0, '#87CEEB'); g.addColorStop(1, '#cfe8f7');
@@ -462,44 +516,28 @@ function drawTank() {
   ctx.fillStyle = '#3a5f3a'; ctx.beginPath(); ctx.roundRect(x - 45, y - 5, 90, 25, 6); ctx.fill();
   ctx.fillStyle = '#2e4a2e'; ctx.fillRect(x - 40, y + 5, 80, 5);
   ctx.fillStyle = '#4a7a4a'; ctx.beginPath(); ctx.arc(x, y - 5, 18, Math.PI, 0); ctx.fill(); ctx.fillRect(x - 18, y - 5, 36, 8);
-
   const rad = params.angle * Math.PI / 180, pivotX = x, pivotY = y - 5;
   ctx.save(); ctx.translate(pivotX, pivotY); ctx.rotate(-rad);
   ctx.fillStyle = '#2e4a2e'; ctx.fillRect(0, -5, 50, 10); ctx.fillStyle = '#1e3a1e'; ctx.fillRect(45, -6, 8, 12);
   ctx.restore();
 }
 
-// =========================================================
-// === RENDER MERIAM MUSUH DI DEKAT POHON (MENGHADAP KIRI) ===
-// =========================================================
 function drawEnemyCannon() {
   if (!enemyCannon) return;
-  
   ctx.save();
   ctx.translate(enemyCannon.x, enemyCannon.y);
-
-  // Roda meriam
   ctx.fillStyle = '#3a2a1a';
   ctx.beginPath(); ctx.arc(-14, 0, 9, 0, Math.PI*2); ctx.fill();
   ctx.beginPath(); ctx.arc(14, 0, 9, 0, Math.PI*2); ctx.fill();
-
-  // Badan meriam
   ctx.fillStyle = '#4a3a2a';
   ctx.fillRect(-18, -14, 36, 14);
-
-  // Laras Meriam (Rotasi tepat menghadap tank ke arah kiri)
   ctx.save();
   ctx.translate(0, -10);
   ctx.rotate(enemyCannon.angle);
-
   const recoilOffset = enemyCannon.recoil > 0 ? 8 : 0;
-  
-  // Batang laras memanjang ke kiri (nilai X negatif)
   ctx.fillStyle = '#222';
   ctx.fillRect(-45 - recoilOffset, -4, 45, 8);
   ctx.fillRect(-51 - recoilOffset, -6, 6, 12);
-
-  // Efek Muzzle Flash (Muntahan meriam warna api)
   if (enemyCannon.recoil > 0) {
       ctx.save();
       ctx.globalCompositeOperation = 'lighter';
@@ -510,8 +548,6 @@ function drawEnemyCannon() {
       grd.addColorStop(1, 'rgba(255, 50, 0, 0)');
       ctx.fillStyle = grd;
       ctx.beginPath(); ctx.arc(muzzleX, 0, 25, 0, Math.PI * 2); ctx.fill();
-
-      // Lidah api moncong meriam
       ctx.fillStyle = 'rgba(255, 230, 50, 0.9)';
       ctx.beginPath(); 
       ctx.moveTo(muzzleX, -8); 
@@ -520,19 +556,121 @@ function drawEnemyCannon() {
       ctx.fill();
       ctx.restore();
   }
-
   ctx.restore();
   ctx.restore();
 }
 
-function drawFighterPlane() {
-  ctx.save(); ctx.translate(bomberX, 70);
+// ===== GAMBAR PESAWAT PENGANGKUT =====
+function drawTransportPlane() {
+  if (transportPlane.isFalling && transportPlane.y > GROUND_Y + 100) return;
+  
+  ctx.save();
+  ctx.translate(transportPlane.x, transportPlane.y);
+  
+  // Hanya miringkan sedikit sesuai arah, tidak berputar
+  if (transportPlane.isFalling) {
+    ctx.rotate(transportPlane.dir * 0.6);
+  } else {
+    ctx.rotate(transportPlane.dir * 0.05);
+  }
+  
+  ctx.scale(transportPlane.dir, 1);
+  
+  ctx.fillStyle = '#6b7c8a';
+  ctx.beginPath();
+  ctx.moveTo(50, 0); ctx.lineTo(20, -10); ctx.lineTo(-40, -10);
+  ctx.lineTo(-55, 0); ctx.lineTo(-40, 10); ctx.lineTo(20, 10);
+  ctx.closePath(); ctx.fill();
+
+  ctx.fillStyle = '#556674';
+  ctx.beginPath();
+  ctx.moveTo(10, -8); ctx.lineTo(-15, -30); ctx.lineTo(-35, -30); ctx.lineTo(-20, -8);
+  ctx.closePath(); ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(10, 8); ctx.lineTo(-15, 30); ctx.lineTo(-35, 30); ctx.lineTo(-20, 8);
+  ctx.closePath(); ctx.fill();
+
+  ctx.fillStyle = '#5a6b78';
+  ctx.beginPath(); ctx.moveTo(-45, -6); ctx.lineTo(-60, -20); ctx.lineTo(-60, -6); ctx.closePath(); ctx.fill();
+
+  ctx.fillStyle = '#88ccff'; ctx.beginPath(); ctx.ellipse(35, -2, 10, 6, 0, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = '#2c3e50'; ctx.fillRect(-10, 6, 14, 3);
+
+  if (transportPlane.isFalling) {
+    ctx.fillStyle = 'rgba(0,0,0,0.6)';
+    ctx.beginPath(); ctx.arc(-20, -10, 15 + Math.random()*10, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle = 'rgba(255,100,0,0.8)';
+    ctx.beginPath(); ctx.arc(-20, -10, 8 + Math.random()*5, 0, Math.PI*2); ctx.fill();
+  }
+  ctx.restore();
+}
+
+// ===== GAMBAR PESAWAT PENGEBOM =====
+function drawBomberPlane(plane) {
+  if (plane.isFalling && plane.y > GROUND_Y + 100) return;
+  
+  ctx.save();
+  ctx.translate(plane.x, plane.y);
+  
+  // Hanya miringkan sedikit sesuai arah, tidak berputar
+  if (plane.isFalling) {
+    ctx.rotate(plane.dir * 0.6);
+  }
+  
+  ctx.scale(plane.dir, 1);
+  
   ctx.fillStyle = '#8a9ba8'; ctx.beginPath(); ctx.moveTo(40, 0); ctx.lineTo(-20, -6); ctx.lineTo(-50, 0); ctx.lineTo(-20, 6); ctx.closePath(); ctx.fill();
   ctx.fillStyle = '#6d7f8c'; ctx.beginPath(); ctx.moveTo(5, 0); ctx.lineTo(-5, -18); ctx.lineTo(-20, -18); ctx.lineTo(-15, 0); ctx.closePath(); ctx.fill();
   ctx.beginPath(); ctx.moveTo(5, 0); ctx.lineTo(-5, 18); ctx.lineTo(-20, 18); ctx.lineTo(-15, 0); ctx.closePath(); ctx.fill();
   ctx.fillStyle = '#88ccff'; ctx.beginPath(); ctx.ellipse(-10, -2, 8, 4, 0, 0, Math.PI*2); ctx.fill();
+  
+  if (plane.isFalling) {
+    ctx.fillStyle = 'rgba(0,0,0,0.6)';
+    ctx.beginPath(); ctx.arc(-15, -5, 12 + Math.random()*10, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle = 'rgba(255,100,0,0.8)';
+    ctx.beginPath(); ctx.arc(-15, -5, 6 + Math.random()*5, 0, Math.PI*2); ctx.fill();
+  }
   ctx.restore();
 }
+
+function drawFighterPlane() {
+  ctx.save();
+  ctx.translate(fighterPlane.x, fighterPlane.y);
+  ctx.scale(fighterPlane.dir, 1);
+  
+  ctx.fillStyle = '#a4b0b8';
+  ctx.beginPath();
+  ctx.moveTo(50, 0);
+  ctx.lineTo(20, -8);
+  ctx.lineTo(-30, -8);
+  ctx.lineTo(-40, 0);
+  ctx.lineTo(-30, 8);
+  ctx.lineTo(20, 8);
+  ctx.closePath(); ctx.fill();
+  
+  ctx.fillStyle = '#86949c';
+  ctx.beginPath();
+  ctx.moveTo(10, -5); ctx.lineTo(-15, -20); ctx.lineTo(-25, -20); ctx.lineTo(-15, -5);
+  ctx.closePath(); ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(10, 5); ctx.lineTo(-15, 20); ctx.lineTo(-25, 20); ctx.lineTo(-15, 5);
+  ctx.closePath(); ctx.fill();
+  
+  ctx.fillStyle = '#333';
+  ctx.beginPath();
+  ctx.ellipse(20, 0, 8, 5, 0, 0, Math.PI*2);
+  ctx.fill();
+  
+  ctx.fillStyle = '#86949c';
+  ctx.beginPath();
+  ctx.moveTo(-30, -4);
+  ctx.lineTo(-40, -15);
+  ctx.lineTo(-40, -4);
+  ctx.closePath(); ctx.fill();
+  
+  ctx.restore();
+}
+
 function drawHelicopter() {
   ctx.save(); ctx.translate(heliX, 150); ctx.scale(heliDir, 1);
   ctx.fillStyle = '#4a6741'; ctx.beginPath(); ctx.ellipse(0, 0, 28, 14, 0, 0, Math.PI*2); ctx.fill();
@@ -551,14 +689,20 @@ function drawHelicopter() {
   }
   ctx.restore();
 }
+
 function drawTargetPlane() {
-  ctx.save(); ctx.translate(targetX, targetY);
+  ctx.save(); 
+  ctx.translate(targetPlaneObj.x, targetPlaneObj.y);
+  ctx.scale(targetPlaneObj.dir, 1);
+  
   ctx.fillStyle = '#9aa5ad'; ctx.beginPath(); ctx.moveTo(-50, 0); ctx.lineTo(30, -8); ctx.lineTo(60, 0); ctx.lineTo(30, 8); ctx.closePath(); ctx.fill();
   ctx.fillStyle = '#7a8590'; ctx.beginPath(); ctx.moveTo(-10, 0); ctx.lineTo(-5, -22); ctx.lineTo(15, -22); ctx.lineTo(15, 0); ctx.closePath(); ctx.fill();
   ctx.beginPath(); ctx.moveTo(-10, 0); ctx.lineTo(-5, 22); ctx.lineTo(15, 22); ctx.lineTo(15, 0); ctx.closePath(); ctx.fill();
   ctx.fillStyle = '#88ccff'; ctx.beginPath(); ctx.ellipse(20, -2, 8, 5, 0, 0, Math.PI*2); ctx.fill();
+  
   ctx.restore();
 }
+
 function drawParatrooper(p) {
   ctx.save();
   ctx.translate(p.x, p.y);
@@ -575,14 +719,11 @@ function drawParatrooper(p) {
 
 function drawCannonball(p, isEnemy) {
   if(!p) return;
-
   ctx.save();
   ctx.globalCompositeOperation = 'lighter';
-  
   p.trail.forEach((t, i) => {
     const alpha = i / p.trail.length;
     const radius = 9 * alpha;
-    
     const grd = ctx.createRadialGradient(t.x, t.y, 0, t.x, t.y, radius + 2);
     if (isEnemy) {
       grd.addColorStop(0, `rgba(255, 255, 200, ${alpha * 0.9})`);
@@ -614,7 +755,6 @@ function drawCannonball(p, isEnemy) {
   }
   ctx.fillStyle = grd;
   ctx.beginPath(); ctx.arc(p.x, p.y, 18, 0, Math.PI * 2); ctx.fill();
-
   ctx.fillStyle = '#ffffff';
   ctx.beginPath(); ctx.arc(p.x, p.y, 5, 0, Math.PI * 2); ctx.fill();
   ctx.restore();
@@ -659,6 +799,12 @@ function drawUnit(u, isFiring) {
     ctx.fillStyle = '#3a5233'; ctx.beginPath(); ctx.arc(14, -10, 6, Math.PI, 0); ctx.fill();
     ctx.strokeStyle = '#4a6741'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(8, -6); ctx.lineTo(16, -4); ctx.stroke();
     ctx.strokeStyle = '#222'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(12, -6); ctx.lineTo(28, -4); ctx.stroke();
+    
+    if (u.isGrenadier) {
+      ctx.fillStyle = '#888';
+      ctx.beginPath(); ctx.arc(18, -10, 3, 0, Math.PI*2); ctx.fill();
+    }
+
     if (isFiring) drawMuzzleFlash(30, -4);
     ctx.strokeStyle = '#2c3e50'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(-12, -4); ctx.lineTo(-18, -2); ctx.stroke();
   } else if (u.state === 'running') {
@@ -715,12 +861,12 @@ function drawEffects() {
   });
 }
 
-// ================= LOGIKA UTAMA =================
 function update() {
   time++;
   if (shakeTime > 0) shakeTime--;
   if (heliMuzzleFlash > 0) heliMuzzleFlash--;
 
+  // ===== HELIKOPTER =====
   heliX += heliDir * 2.8;
   if (heliX > W - 50 || heliX < 300) heliDir *= -1;
   if (time % 8 === 0 && heliX > 400) {
@@ -734,10 +880,280 @@ function update() {
     }
   }
 
-  bomberX -= 3.5;
-  if (bomberX < -100) bomberX = W + 100;
-  else if (!bomb && bomberX < 320 && bomberX > 280) bomb = { x: bomberX, y: 80, vy: 0 };
+  // ===== PESAWAT TEMPUR (FIGHTER JET) =====
+  fighterPlane.x += fighterPlane.dir * fighterPlane.speed;
+  if (fighterPlane.x > W + 60) {
+    fighterPlane.x = W + 60; fighterPlane.dir = -1;
+  } else if (fighterPlane.x < -60) {
+    fighterPlane.x = -60; fighterPlane.dir = 1;
+  }
+  
+  fighterPlane.fireCooldown--;
+  if (fighterPlane.fireCooldown <= 0) {
+    let target = null;
+    
+    if (!transportPlane.isFalling && !transportPlane.isEvading && transportPlane.x > -100 && transportPlane.x < W + 100) {
+       if (Math.random() < 0.6) {
+           target = transportPlane;
+           transportPlane.isEvading = true;
+           transportPlane.evadeTimer = 90;
+           transportPlane.evadeDir = Math.random() > 0.5 ? 1 : -1;
+       }
+    } 
+    
+    if (!target) {
+      const activeBombers = bomberPlanes.filter(p => !p.isFalling && !p.isEvading && p.x > -100 && p.x < W + 100);
+      if (activeBombers.length > 0) {
+        target = activeBombers[Math.floor(Math.random() * activeBombers.length)];
+        if (!target.isEvading && Math.random() < 0.4) {
+          target.isEvading = true;
+          target.evadeTimer = 120;
+          target.evadeDir = Math.random() > 0.5 ? 1 : -1;
+        }
+      }
+    }
 
+    if (target) {
+      fighterPlane.fireCooldown = 12; 
+      
+      const dx = target.x - fighterPlane.x;
+      const dy = target.y - fighterPlane.y;
+      const dist = Math.hypot(dx, dy);
+      
+      let accuracyMod = (target === transportPlane && transportPlane.isEvading) ? 0.3 : 1;
+      
+      if (Math.random() < accuracyMod) {
+        fighterBullets.push({
+          x: fighterPlane.x + fighterPlane.dir * 40,
+          y: fighterPlane.y + 5,
+          vx: (dx/dist) * 12,
+          vy: (dy/dist) * 12
+        });
+        playRifleSound();
+      }
+    } else {
+      fighterPlane.fireCooldown = 15;
+    }
+  }
+
+  // ===== UPDATE PELURU PESAWAT TEMPUR =====
+  for (let i = fighterBullets.length - 1; i >= 0; i--) {
+    const b = fighterBullets[i];
+    b.x += b.vx;
+    b.y += b.vy;
+
+    if (b.x < -50 || b.x > W + 50 || b.y < -50 || b.y > GROUND_Y) {
+      fighterBullets.splice(i, 1);
+      continue;
+    }
+
+    let hit = false;
+    
+    if (!transportPlane.isFalling && Math.hypot(b.x - transportPlane.x, b.y - transportPlane.y) < 35) {
+      if (!transportPlane.isEvading || Math.random() < 0.4) {
+        transportPlane.hp -= 10;
+        explosions.push({ x: b.x, y: b.y, t: 0, maxT: 10, size: 15 });
+        hit = true;
+        if (transportPlane.hp <= 0) {
+          transportPlane.isFalling = true;
+          transportPlane.fallVy = -3;
+          transportPlane.fallVx = transportPlane.dir * 2;
+        }
+      } else {
+        hit = true; 
+      }
+    }
+
+    if (!hit) {
+      for (let bp of bomberPlanes) {
+        if (!bp.isFalling && Math.hypot(b.x - bp.x, b.y - bp.y) < 35) {
+          bp.hp -= 15;
+          explosions.push({ x: b.x, y: b.y, t: 0, maxT: 10, size: 15 });
+          hit = true;
+          if (bp.hp <= 0) {
+            bp.isFalling = true;
+            bp.fallVy = -3;
+            bp.fallVx = bp.dir * 2;
+          }
+          break;
+        }
+      }
+    }
+    if (hit) fighterBullets.splice(i, 1);
+  }
+
+  // ===== LOGIKA JATUH PESAWAT =====
+  if (transportPlane.isFalling) {
+    transportPlane.fallVy += 0.3;
+    transportPlane.x += transportPlane.fallVx;
+    transportPlane.y += transportPlane.fallVy;
+    if (transportPlane.y >= GROUND_Y - 10) {
+      createBigExplosion(transportPlane.x, GROUND_Y - 10);
+      transportPlane.y = GROUND_Y + 200;
+      transportPlane.isFalling = false;
+      transportPlane.hp = 200;
+      setTimeout(() => {
+        transportPlane.x = -100;
+        transportPlane.y = 80;
+        transportPlane.dir = 1;
+      }, 5000);
+    }
+  } else {
+    // Manuver Evasive Pesawat Pengangkut (Lurus Naik/Turun, tanpa berputar)
+    if (transportPlane.isEvading) {
+      transportPlane.evadeTimer--;
+      transportPlane.x += transportPlane.dir * transportPlane.speed * 1.5;
+      transportPlane.y += transportPlane.evadeDir * 8; // Hanya bergeser vertikal
+      if (transportPlane.y < 20) transportPlane.evadeDir = 1;
+      if (transportPlane.y > 140) transportPlane.evadeDir = -1;
+      
+      if (transportPlane.evadeTimer <= 0) {
+        transportPlane.isEvading = false;
+      }
+    } else {
+      transportPlane.x += transportPlane.dir * transportPlane.speed;
+      if (transportPlane.x > W + 60) {
+        transportPlane.x = W + 60; transportPlane.dir = -1;
+      } else if (transportPlane.x < -60) {
+        transportPlane.x = -60; transportPlane.dir = 1;
+      }
+    }
+    
+    if (transportPlane.dropCooldown > 0) transportPlane.dropCooldown--;
+    if (transportPlane.dropCooldown <= 0 && transportPlane.x > 550 && transportPlane.x < 880) {
+      transportPlane.dropCooldown = 25;
+      airborneParatroopers.push({
+        id: Math.random(),
+        x: transportPlane.x + (Math.random() - 0.5) * 20,
+        y: transportPlane.y + 20,
+        vy: 0.8 + Math.random() * 0.5,
+        state: 'falling',
+        fireTimer: Math.random() * 30
+      });
+    }
+  }
+
+  bomberPlanes.forEach(bp => {
+    if (bp.isFalling) {
+      bp.fallVy += 0.3;
+      bp.x += bp.fallVx;
+      bp.y += bp.fallVy;
+      if (bp.y >= GROUND_Y - 10) {
+        createBigExplosion(bp.x, GROUND_Y - 10);
+        bp.y = GROUND_Y + 200;
+        bp.isFalling = false;
+        bp.hp = 100;
+        setTimeout(() => {
+          bp.x = W + 100;
+          bp.y = 70;
+          bp.dir = -1;
+        }, 3000 + Math.random() * 2000);
+      }
+    } else {
+      // Manuver Evasive Pesawat Pengebom (Lurus Naik/Turun, tanpa berputar)
+      if (bp.isEvading) {
+        bp.evadeTimer--;
+        bp.x += bp.dir * bp.speed;
+        bp.y += bp.evadeDir * 6; // Hanya bergeser vertikal
+        if (bp.y < 20) bp.evadeDir = 1;
+        if (bp.y > 120) bp.evadeDir = -1;
+        
+        if (bp.evadeTimer <= 0) {
+          bp.isEvading = false;
+        }
+      } else {
+        bp.x += bp.dir * bp.speed;
+        bp.phase += 0.05;
+        bp.y = 70 + Math.sin(bp.phase) * 35;
+      }
+
+      if (bp.x > W + 80) {
+        bp.x = W + 80; bp.dir = -1;
+      } else if (bp.x < -80) {
+        bp.x = -80; bp.dir = 1;
+      }
+
+      bp.bombTimer++;
+      if (bp.bombTimer > 250 && bp.x > 80 && bp.x < 300 && Math.random() < 0.3) {
+        bp.bombTimer = 0;
+        bombs.push({ 
+          x: bp.x, 
+          y: bp.y + 10, 
+          vy: 0, 
+          vx: bp.dir * bp.speed * 0.2 + (Math.random() - 0.5) * 1.5
+        });
+      }
+    }
+  });
+
+  // ===== UPDATE BOM PESAWAT =====
+  for (let i = bombs.length - 1; i >= 0; i--) {
+    const b = bombs[i];
+    b.x += b.vx;
+    b.vy += 0.25;
+    b.y += b.vy;
+    if (b.y > GROUND_Y - 10) {
+      createBigExplosion(b.x, GROUND_Y - 5);
+      bombs.splice(i, 1);
+    }
+  }
+
+  // ===== LOGIKA PELEMPAR GRANAT =====
+  const grenadier = allies.find(a => a.isGrenadier && !a.dead);
+  if (grenadier) {
+    grenadier.grenadeTimer = (grenadier.grenadeTimer || 0) + 1;
+    if (grenadier.grenadeTimer > 180) {
+      grenadier.grenadeTimer = 0;
+      const targetEnemies = enemies.filter(e => !e.dead && e.x > 500);
+      if (targetEnemies.length > 0) {
+        const target = targetEnemies[Math.floor(Math.random() * targetEnemies.length)];
+        const startX = grenadier.x + 20;
+        const startY = grenadier.y - 10;
+        const dx = target.x - startX;
+        const dy = target.y - startY;
+        const t = 60; 
+        const vx = dx / t;
+        const vy = (dy - 0.5 * 0.15 * t * t) / t;
+        grenades.push({ x: startX, y: startY, vx: vx, vy: vy, trail: [] });
+      }
+    }
+  }
+
+  // ===== UPDATE GRANAT =====
+  for (let i = grenades.length - 1; i >= 0; i--) {
+    const g = grenades[i];
+    g.trail.push({ x: g.x, y: g.y });
+    if (g.trail.length > 10) g.trail.shift();
+    g.x += g.vx;
+    g.vy += 0.15;
+    g.y += g.vy;
+
+    let exploded = false;
+    if (g.y >= GROUND_Y - 5) {
+      exploded = true;
+    } else {
+      for (let e of enemies) {
+        if (!e.dead && Math.hypot(g.x - e.x, g.y - e.y) < 20) {
+          exploded = true;
+          break;
+        }
+      }
+    }
+    if (exploded) {
+      createGrenadeExplosion(g.x, Math.min(g.y, GROUND_Y - 5));
+      grenades.splice(i, 1);
+    }
+  }
+
+  // ===== PESAWAT TARGET =====
+  targetPlaneObj.x += targetPlaneObj.dir * targetPlaneObj.speed;
+  if (targetPlaneObj.x > W - 80) {
+    targetPlaneObj.x = W - 80; targetPlaneObj.dir = -1;
+  } else if (targetPlaneObj.x < 200) {
+    targetPlaneObj.x = 200; targetPlaneObj.dir = 1;
+  }
+
+  // ===== PROYEKTIL PEMAIN =====
   if (projectile) {
     projectile.trail.push({ x: projectile.x, y: projectile.y });
     if (projectile.trail.length > 25) projectile.trail.shift();
@@ -747,66 +1163,47 @@ function update() {
         particles.push({ x: projectile.x, y: projectile.y, vx: (Math.random()-0.5)*2, vy: (Math.random()-0.5)*2, life: 0.6, decay: 0.06, size: 4, type: 'fire' });
     }
 
-    if (Math.hypot(projectile.x - targetX, projectile.y - targetY) < 40) { createBigExplosion(targetX, targetY); projectile = null; }
+    if (Math.hypot(projectile.x - targetPlaneObj.x, projectile.y - targetPlaneObj.y) < 40) {
+      createBigExplosion(targetPlaneObj.x, targetPlaneObj.y);
+      projectile = null;
+    }
     else if (projectile.y > GROUND_Y || projectile.x > W + 50 || projectile.x < -50) {
       if (projectile.y > GROUND_Y) createBigExplosion(projectile.x, GROUND_Y);
       projectile = null;
     }
   }
 
-  if (bomb) {
-    bomb.x -= 0.5; bomb.vy += 0.25; bomb.y += bomb.vy;
-    if (bomb.y > GROUND_Y - 10) { createBigExplosion(bomb.x, GROUND_Y - 5); bomb = null; }
-  }
-
-  // === UPDATE MERIAM MUSUH DI DEKAT POHON (MENEMBAK TEPAT KE TANK PEMAIN DI KIRI DENGAN PARABOLA API) ===
+  // ===== MERIAM MUSUH =====
   if (enemyCannon) {
     enemyCannon.fireTimer++;
     if (enemyCannon.recoil > 0) enemyCannon.recoil--;
 
     const targetTankX = 150;
     const targetTankY = GROUND_Y - 25;
-    
     const cannonPivotX = enemyCannon.x;
     const cannonPivotY = enemyCannon.y - 10;
-
     const dx = targetTankX - cannonPivotX; 
     const dy = cannonPivotY - targetTankY;
-    
     const speed = 20; 
     const g = 0.15;   
-
     const v2 = speed * speed;
     const disc = v2 * v2 - g * (g * (dx * dx) + 2 * dy * v2);
-    
     let angleRad = -0.5; 
     if (disc >= 0) {
       const tanTheta = (v2 - Math.sqrt(disc)) / (g * Math.abs(dx));
       angleRad = -Math.atan(tanTheta); 
     }
-    
     enemyCannon.angle = angleRad;
 
-    // Frekuensi tembak musuh disesuaikan (setiap 200 frame / ~3.3 detik)
     if (enemyCannon.fireTimer > 200) {
       enemyCannon.fireTimer = 0;
       enemyCannon.recoil = 12;
-
       const barrelLen = 51;
       const muzzleX = cannonPivotX + Math.cos(angleRad) * barrelLen;
       const muzzleY = cannonPivotY + Math.sin(angleRad) * barrelLen;
-
       const vx = Math.cos(angleRad) * speed;
       const vy = Math.sin(angleRad) * speed;
-
-      enemyProjectiles.push({
-        x: muzzleX,
-        y: muzzleY,
-        vx: vx,
-        vy: vy,
-        trail: []
-      });
-
+      enemyProjectiles.push({ x: muzzleX, y: muzzleY, vx: vx, vy: vy, trail: [] });
       for (let i = 0; i < 8; i++) {
         particles.push({ x: muzzleX, y: muzzleY, vx: Math.cos(angleRad)*(2+Math.random()*4), vy: Math.sin(angleRad)*(2+Math.random()*4), life: 0.8, decay: 0.1, size: 14, type: 'fire' });
       }
@@ -814,13 +1211,11 @@ function update() {
     }
   }
 
-  // === UPDATE PROYEKTIL MERIAM MUSUH DENGAN JALUR API ===
+  // ===== PROYEKTIL MERIAM MUSUH =====
   for (let i = enemyProjectiles.length - 1; i >= 0; i--) {
     let p = enemyProjectiles[i];
-    
     p.trail.push({x: p.x, y: p.y});
     if(p.trail.length > 40) p.trail.shift(); 
-    
     p.vy += 0.15; 
     p.x += p.vx; 
     p.y += p.vy;
@@ -834,13 +1229,11 @@ function update() {
         enemyProjectiles.splice(i, 1);
         continue;
     }
-
     if (p.y > GROUND_Y) {
         createBigExplosion(p.x, GROUND_Y);
         enemyProjectiles.splice(i, 1);
         continue;
     }
-
     for (let a of allies) {
       if (!a.dead && Math.hypot(p.x - a.x, p.y - (a.y - 10)) < 20) {
         createBigExplosion(p.x, p.y);
@@ -850,6 +1243,7 @@ function update() {
     }
   }
 
+  // ===== TENTARA DARAT =====
   const allUnits = [...allies, ...enemies];
   allUnits.forEach(u => {
     if (u.dead) return;
@@ -889,12 +1283,7 @@ function update() {
     }
   });
 
-  if (time % 400 === 0) {
-    for(let i=0; i<3; i++) {
-      airborneParatroopers.push({ id: Math.random(), x: targetX + 20 + (Math.random()-0.5)*40, y: targetY + 30, vy: 0.5 + Math.random()*0.5, state: 'falling', fireTimer: Math.random()*30 });
-    }
-  }
-
+  // ===== PENERJUN PAYUNG =====
   for (let i = airborneParatroopers.length - 1; i >= 0; i--) {
     let p = airborneParatroopers[i];
     if (p.state === 'falling') {
@@ -918,6 +1307,7 @@ function update() {
     }
   }
 
+  // ===== PELURU INFANTERI =====
   for (let i = infantryBullets.length - 1; i >= 0; i--) {
     const b = infantryBullets[i]; b.x += b.vx; b.y += b.vy;
     if (b.y > GROUND_Y || b.x < 0 || b.x > W) { infantryBullets.splice(i, 1); continue; }
@@ -937,6 +1327,7 @@ function update() {
     if (hit) infantryBullets.splice(i, 1);
   }
 
+  // ===== PELURU HELIKOPTER =====
   for (let i = heliBullets.length - 1; i >= 0; i--) {
     const b = heliBullets[i]; b.x += b.vx; b.y += b.vy;
     if (b.y > GROUND_Y - 5 || b.x < 0 || b.x > W) {
@@ -956,6 +1347,7 @@ function update() {
     }
   }
 
+  // ===== RESPAWN & FISIKA UNIT MATI =====
   allUnits.forEach(u => {
     if (u.dead) {
       u.x += u.vx; u.y += u.vy; u.vy += 0.6; u.vx *= 0.98; u.rot += u.vRot;
@@ -972,6 +1364,7 @@ function update() {
     }
   });
 
+  // ===== PARTIKEL =====
   for (let i = particles.length - 1; i >= 0; i--) {
     const p = particles[i]; p.x += p.vx; p.y += p.vy;
     if (p.type === 'spark') p.vy += 0.3;
@@ -1001,13 +1394,61 @@ function render() {
   }
 
   drawSky(); drawSun(); drawCloud(200, 80, 1); drawCloud(500, 50, 0.8); drawCloud(750, 100, 1.1);
-  drawFighterPlane(); drawHelicopter(); drawTrees(); drawGround(); drawTank();
+  
+  drawTransportPlane();
+  bomberPlanes.forEach(drawBomberPlane);
+  drawFighterPlane();
+  drawHelicopter(); drawTrees(); drawGround(); drawTank();
   drawEnemyCannon();
   drawTargetPlane();
   airborneParatroopers.forEach(drawParatrooper);
 
   if (projectile) drawCannonball(projectile, false);
   enemyProjectiles.forEach(p => drawCannonball(p, true));
+
+  fighterBullets.forEach(b => {
+    ctx.save();
+    ctx.beginPath(); ctx.moveTo(b.x, b.y); ctx.lineTo(b.x - b.vx * 2, b.y - b.vy * 2);
+    ctx.strokeStyle = '#ffff66'; ctx.lineWidth = 3; ctx.stroke();
+    ctx.restore();
+  });
+
+  bombs.forEach(b => {
+    ctx.save();
+    ctx.fillStyle = '#333';
+    ctx.beginPath();
+    ctx.ellipse(b.x, b.y, 5, 8, 0, 0, Math.PI*2);
+    ctx.fill();
+    ctx.fillStyle = '#555';
+    ctx.beginPath();
+    ctx.ellipse(b.x, b.y - 8, 2, 3, 0, 0, Math.PI*2);
+    ctx.fill();
+    ctx.restore();
+  });
+
+  grenades.forEach(g => {
+    ctx.save();
+    ctx.strokeStyle = 'rgba(200, 200, 200, 0.5)';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    g.trail.forEach((t, i) => {
+      if (i === 0) ctx.moveTo(t.x, t.y);
+      else ctx.lineTo(t.x, t.y);
+    });
+    ctx.stroke();
+    ctx.restore();
+
+    ctx.save();
+    ctx.translate(g.x, g.y);
+    ctx.rotate(time * 0.5);
+    ctx.fillStyle = '#2d4a22';
+    ctx.beginPath();
+    ctx.ellipse(0, 0, 4, 6, 0, 0, Math.PI*2);
+    ctx.fill();
+    ctx.fillStyle = '#666';
+    ctx.fillRect(-2, -8, 4, 3);
+    ctx.restore();
+  });
 
   [...allies, ...enemies].forEach(u => {
     drawUnit(u, u.state === 'prone' && u.fireTimer > 10 && u.fireTimer < 13);
@@ -1049,32 +1490,32 @@ function render() {
 
 render();
 
-// ================= KUIS FISIKA (BENAR / SALAH) =================
+// ================= KUIS FISIKA =================
 const quizData = [
   {
     q: "1. Pada gerak parabola proyektil meriam, komponen kecepatan horizontal (vx) bernilai tetap (konstan) jika hambatan udara diabaikan.",
     answer: true,
-    explanation: "Benar! Pada arah horizontal tidak ada percepatan (kecuali hambatan udara), sehingga vx konstan."
+    explanation: "Benar! Pada arah horizontal tidak ada percepatan, sehingga vx konstan."
   },
   {
     q: "2. Bom yang dijatuhkan dari pesawat pengebom bergerak lurus vertikal ke bawah tanpa dipengaruhi oleh gerak pesawat.",
     answer: false,
-    explanation: "Salah! Bom memiliki kecepatan awal horizontal yang sama dengan kecepatan pesawat, sehingga geraknya membentuk lintasan parabola."
+    explanation: "Salah! Bom memiliki kecepatan awal horizontal yang sama dengan kecepatan pesawat, sehingga lintasannya parabola."
   },
   {
     q: "3. Di titik tertinggi lintasan gerak parabola peluru meriam, komponen kecepatan vertikal peluru bernilai nol (vy = 0).",
     answer: true,
-    explanation: "Benar! Sebelum peluru mulai turun kembali ke bumi, kecepatannya pada arah vertikal sesaat bernilai nol."
+    explanation: "Benar! Sebelum mulai turun, kecepatan vertikal sesaat bernilai nol."
   },
   {
     q: "4. Waktu total yang dibutuhkan peluru meriam untuk melayang di udara sampai kembali ke tanah tidak bergantung pada sudut elevasinya.",
     answer: false,
-    explanation: "Salah! Waktu total penerbangan sangat bergantung pada besar sudut elevasi dan kecepatan awal peluru."
+    explanation: "Salah! Waktu total penerbangan bergantung pada sudut elevasi dan kecepatan awal."
   },
   {
     q: "5. Pada peristiwa gerak jatuh bebas, waktu jatuh suatu benda tidak bergantung pada massa benda tersebut.",
     answer: true,
-    explanation: "Benar! Di ruang hampa (atau bila hambatan udara diabaikan), semua benda jatuh dengan percepatan gravitasi yang sama besarnya."
+    explanation: "Benar! Bila hambatan udara diabaikan, percepatan gravitasi sama untuk semua benda."
   }
 ];
 
@@ -1094,7 +1535,7 @@ function renderQuizQuestions() {
   const container = document.getElementById('quizQuestionsContainer');
   container.innerHTML = '';
   
-  quizData.horizontal || quizData.forEach((item, index) => {
+  quizData.forEach((item, index) => {
     const isAnswered = answeredStatus[index] !== undefined;
     const userAns = answeredStatus[index];
     
