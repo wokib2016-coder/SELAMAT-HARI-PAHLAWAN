@@ -1,0 +1,1129 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<title>MERDEKA - Perang Merebut Kemerdekaan</title>
+<style>
+  body {
+    margin: 0;
+    background: #1a1a2e;
+    font-family: 'Segoe UI', Arial, sans-serif;
+    color: #eee;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    min-height: 100vh;
+    padding: 10px;
+    box-sizing: border-box;
+  }
+
+  /* ===== HEADER DENGAN BENDERA BERKIBAR ===== */
+  .header {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 24px;
+    margin: 5px 0 15px 0;
+  }
+  .flag-wrap {
+    width: 70px;
+    height: 50px;
+    perspective: 200px;
+    flex-shrink: 0;
+  }
+  .flag {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    transform-origin: left center;
+    animation: wave 2.2s ease-in-out infinite;
+    border-radius: 2px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.5);
+  }
+  .flag::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 50%;
+    background: #e11d1d;
+  }
+  .flag::after {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 50%;
+    background: #ffffff;
+  }
+  @keyframes wave {
+    0%   { transform: rotateY(0deg) skewY(0deg); }
+    25%  { transform: rotateY(12deg) skewY(-2deg); }
+    50%  { transform: rotateY(0deg) skewY(0deg); }
+    75%  { transform: rotateY(-12deg) skewY(2deg); }
+    100% { transform: rotateY(0deg) skewY(0deg); }
+  }
+  .title-block { text-align: center; }
+  .title-block h1 {
+    margin: 0; font-size: 32px; letter-spacing: 4px; color: #ffcc66;
+    text-shadow: 0 2px 6px rgba(0,0,0,0.8), 0 0 12px rgba(255,80,0,0.4);
+  }
+  .title-block p {
+    margin: 4px 0 0 0; font-size: 14px; letter-spacing: 2px; color: #ffd9a0;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.7);
+  }
+
+  #canvasWrap {
+    position: relative; border: 3px solid #334; border-radius: 12px;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.8); max-width: 100%; max-height: 60vh;
+    display: flex; justify-content: center; background: #000; overflow: hidden;
+  }
+  canvas { display: block; background: #87CEEB; max-width: 100%; max-height: 100%; object-fit: contain; }
+
+  .controls {
+    margin-top: 15px; display: grid; grid-template-columns: repeat(2, minmax(280px, 1fr));
+    gap: 12px 30px; background: #16213e; padding: 18px 24px; border-radius: 12px;
+    width: 900px; max-width: 95vw; box-sizing: border-box; box-shadow: 0 6px 20px rgba(0,0,0,0.6);
+    border: 1px solid #2a3b5c;
+  }
+  .ctrl { display: flex; align-items: center; gap: 12px; font-size: 14px; }
+  .ctrl label { min-width: 140px; color: #9ab; font-weight: 500; }
+  .ctrl input[type=range] { flex: 1; accent-color: #ff6633; cursor: pointer; }
+  .ctrl .val { min-width: 60px; text-align: right; color: #ffcc66; font-weight: bold; font-family: monospace; }
+  
+  .btn-group {
+    grid-column: span 2;
+    display: flex;
+    gap: 15px;
+  }
+  button {
+    flex: 1; padding: 14px; background: linear-gradient(180deg, #ff7733 0%, #ff4400 100%);
+    border: none; color: white; font-weight: bold; border-radius: 8px; cursor: pointer;
+    font-size: 15px; transition: all 0.1s; text-transform: uppercase;
+    letter-spacing: 1.5px; box-shadow: 0 5px 0 #aa2200;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.4);
+  }
+  button.quiz-btn {
+    background: linear-gradient(180deg, #3399ff 0%, #0055ff 100%);
+    box-shadow: 0 5px 0 #0022aa;
+  }
+  button:hover { filter: brightness(1.1); }
+  button:active { transform: translateY(5px); box-shadow: none; }
+
+  /* ===== MODAL KUIS ===== */
+  #quizModal {
+    display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.85); z-index: 1000; justify-content: center; align-items: center;
+  }
+  .quiz-content {
+    background: #16213e; border: 2px solid #334e68; padding: 30px; border-radius: 12px;
+    width: 600px; max-width: 90vw; max-height: 90vh; overflow-y: auto;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+  }
+  .quiz-content h2 { margin-top: 0; color: #ffcc66; text-align: center; letter-spacing: 2px; }
+  .question-box { background: #0f172a; padding: 15px; border-radius: 8px; margin-bottom: 15px; border-left: 4px solid #ff6633; }
+  .question-box p { margin: 0 0 10px 0; font-size: 15px; line-height: 1.4; color: #f1f5f9; }
+  .quiz-options { display: flex; gap: 10px; }
+  .quiz-options button {
+    flex: 1; padding: 10px; font-size: 14px; background: #334155; box-shadow: 0 3px 0 #1e293b; margin: 0;
+  }
+  .quiz-options button.true-btn { background: linear-gradient(180deg, #22c55e 0%, #15803d 100%); box-shadow: 0 3px 0 #14532d; }
+  .quiz-options button.false-btn { background: linear-gradient(180deg, #ef4444 0%, #b91c1c 100%); box-shadow: 0 3px 0 #7f1d1d; }
+  .quiz-options button:disabled { opacity: 0.6; cursor: not-allowed; transform: none !important; box-shadow: none !important; }
+  .feedback { margin-top: 6px; font-size: 13px; font-weight: bold; }
+  .close-quiz { background: #475569; box-shadow: 0 4px 0 #334155; margin-top: 15px; width: 100%; }
+
+  @media (max-width: 700px) {
+    .controls { grid-template-columns: 1fr; padding: 12px; }
+    .btn-group { flex-direction: column; grid-column: span 1; }
+    .ctrl label { min-width: 110px; }
+    .header { gap: 10px; }
+    .flag-wrap { width: 50px; height: 36px; }
+    .title-block h1 { font-size: 24px; letter-spacing: 2px; }
+    .title-block p { font-size: 11px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="flag-wrap"><div class="flag"></div></div>
+  <div class="title-block">
+    <h1>MERDEKA</h1>
+    <p>PERANG MEREBUT KEMERDEKAAN</p>
+  </div>
+  <div class="flag-wrap"><div class="flag"></div></div>
+</div>
+
+<div id="canvasWrap">
+  <canvas id="cv" width="900" height="500"></canvas>
+</div>
+
+<div class="controls">
+  <div class="ctrl">
+    <label>Sudut Meriam (°)</label>
+    <input type="range" id="angle" min="0" max="90" value="45" step="1">
+    <span class="val" id="angleV">45°</span>
+  </div>
+  <div class="ctrl">
+    <label>Kecepatan Awal (m/s)</label>
+    <input type="range" id="speed" min="10" max="120" value="70" step="1">
+    <span class="val" id="speedV">70</span>
+  </div>
+  <div class="ctrl">
+    <label>Jarak Mendatar (m)</label>
+    <input type="range" id="dx" min="150" max="800" value="500" step="10">
+    <span class="val" id="dxV">500</span>
+  </div>
+  <div class="ctrl">
+    <label>Jarak Vertikal (m)</label>
+    <input type="range" id="dy" min="50" max="400" value="200" step="10">
+    <span class="val" id="dyV">200</span>
+  </div>
+  <div class="btn-group">
+    <button id="fireBtn">🔥 TEMBAK PEMAIN</button>
+    <button id="quizBtn" class="quiz-btn">🎯 KUIS MERDEKA</button>
+  </div>
+</div>
+
+<!-- MODAL KUIS FISIKA -->
+<div id="quizModal">
+  <div class="quiz-content">
+    <h2>KUIS TAKTIS: FISIKA MEDAN PERANG</h2>
+    <p id="quizScoreText" style="text-align: center; color: #ffcc66; font-weight: bold; margin-bottom: 15px;">Skor: 0 / 5</p>
+    <div id="quizQuestionsContainer"></div>
+    <button class="close-quiz" onclick="closeQuiz()">Tutup Kuis & Lanjutkan Perang</button>
+  </div>
+</div>
+
+<script>
+const cv = document.getElementById('cv');
+const ctx = cv.getContext('2d');
+const W = cv.width, H = cv.height;
+const GROUND_Y = H * 0.65;
+
+// ================= AUDIO ENGINE =================
+let audioCtx, distortionNode;
+function initAudio() {
+  if (!audioCtx) {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    distortionNode = audioCtx.createWaveShaper();
+    const k = 50, n = 44100, curve = new Float32Array(n), deg = Math.PI / 180;
+    for (let i = 0; i < n; i++) {
+      const x = (i * 2) / n - 1;
+      curve[i] = ((3 + k) * x * 20 * deg) / (Math.PI + k * Math.abs(x));
+    }
+    distortionNode.curve = curve;
+    distortionNode.oversample = '4x';
+    distortionNode.connect(audioCtx.destination);
+  }
+}
+
+function playMegaExplosionSound() {
+  if (!audioCtx) return;
+  const now = audioCtx.currentTime;
+  const subOsc = audioCtx.createOscillator(), subGain = audioCtx.createGain();
+  subOsc.type = 'sine';
+  subOsc.frequency.setValueAtTime(120, now);
+  subOsc.frequency.exponentialRampToValueAtTime(20, now + 1.2);
+  subGain.gain.setValueAtTime(1.0, now);
+  subGain.gain.exponentialRampToValueAtTime(0.01, now + 1.5);
+  subOsc.connect(subGain); subGain.connect(distortionNode);
+  subOsc.start(now); subOsc.stop(now + 1.5);
+
+  const bufferSize = audioCtx.sampleRate * 1.5;
+  const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+  const data = buffer.getChannelData(0);
+  for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
+  const noise = audioCtx.createBufferSource(); noise.buffer = buffer;
+  const filter = audioCtx.createBiquadFilter(); filter.type = 'lowpass';
+  filter.frequency.setValueAtTime(2000, now);
+  filter.frequency.exponentialRampToValueAtTime(100, now + 1.0);
+  const noiseGain = audioCtx.createGain();
+  noiseGain.gain.setValueAtTime(1.0, now);
+  noiseGain.gain.exponentialRampToValueAtTime(0.01, now + 1.2);
+  noise.connect(filter); filter.connect(noiseGain); noiseGain.connect(distortionNode);
+  noise.start(now);
+}
+
+function playShootSound() {
+  if (!audioCtx) return;
+  const osc = audioCtx.createOscillator(), gain = audioCtx.createGain();
+  osc.type = 'square';
+  osc.frequency.setValueAtTime(150, audioCtx.currentTime);
+  osc.frequency.exponentialRampToValueAtTime(40, audioCtx.currentTime + 0.3);
+  gain.gain.setValueAtTime(0.5, audioCtx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+  osc.connect(gain); gain.connect(audioCtx.destination);
+  osc.start(); osc.stop(audioCtx.currentTime + 0.3);
+}
+
+function playRifleSound() {
+  if (!audioCtx) return;
+  const osc = audioCtx.createOscillator(), gain = audioCtx.createGain();
+  osc.type = 'triangle';
+  osc.frequency.setValueAtTime(400, audioCtx.currentTime);
+  osc.frequency.exponentialRampToValueAtTime(100, audioCtx.currentTime + 0.1);
+  gain.gain.setValueAtTime(0.12, audioCtx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+  osc.connect(gain); gain.connect(audioCtx.destination);
+  osc.start(); osc.stop(audioCtx.currentTime + 0.1);
+}
+
+function playScreamSound() {
+  if (!audioCtx) return;
+  const osc = audioCtx.createOscillator(), gain = audioCtx.createGain();
+  osc.type = 'sawtooth';
+  const now = audioCtx.currentTime;
+  osc.frequency.setValueAtTime(300 + Math.random() * 200, now);
+  osc.frequency.linearRampToValueAtTime(600 + Math.random() * 200, now + 0.1);
+  osc.frequency.exponentialRampToValueAtTime(100, now + 0.4);
+  const filter = audioCtx.createBiquadFilter();
+  filter.type = 'bandpass'; filter.frequency.value = 800; filter.Q.value = 2;
+  gain.gain.setValueAtTime(0.01, now);
+  gain.gain.linearRampToValueAtTime(0.25, now + 0.05);
+  gain.gain.exponentialRampToValueAtTime(0.01, now + 0.4);
+  osc.connect(filter); filter.connect(gain); gain.connect(audioCtx.destination);
+  osc.start(); osc.stop(now + 0.4);
+}
+
+let heliOsc, heliGain;
+function startHeliSound() {
+  if (!audioCtx || heliOsc) return;
+  heliOsc = audioCtx.createOscillator(); heliGain = audioCtx.createGain();
+  heliOsc.type = 'sawtooth'; heliOsc.frequency.value = 80; heliGain.gain.value = 0.03;
+  const lfo = audioCtx.createOscillator(); lfo.type = 'sine'; lfo.frequency.value = 15;
+  const lfoGain = audioCtx.createGain(); lfoGain.gain.value = 30;
+  lfo.connect(lfoGain); lfoGain.connect(heliOsc.frequency);
+  heliOsc.connect(heliGain); heliGain.connect(audioCtx.destination);
+  heliOsc.start(); lfo.start();
+}
+
+// ================= SLIDER & PARAMETER =================
+const angleEl = document.getElementById('angle'), speedEl = document.getElementById('speed');
+const dxEl = document.getElementById('dx'), dyEl = document.getElementById('dy');
+const angleV = document.getElementById('angleV'), speedV = document.getElementById('speedV');
+const dxV = document.getElementById('dxV'), dyV = document.getElementById('dyV');
+const params = { angle: 45, speed: 70, dx: 500, dy: 200 };
+let targetY = GROUND_Y - 220, targetX = 700;
+
+function updateParams() {
+  params.angle = +angleEl.value; params.speed = +speedEl.value;
+  params.dx = +dxEl.value; params.dy = +dyEl.value;
+  angleV.textContent = params.angle + '°'; speedV.textContent = params.speed;
+  dxV.textContent = params.dx; dyV.textContent = params.dy;
+  const scale = 0.9;
+  targetX = Math.min(W - 100, 140 + params.dx * scale);
+  targetY = Math.max(80, GROUND_Y - params.dy * scale);
+}
+[angleEl, speedEl, dxEl, dyEl].forEach(el => el.addEventListener('input', updateParams));
+updateParams();
+
+// ================= STATE =================
+let projectile = null, bomb = null, explosions = [], particles = [], bloodParticles = [], bloodStains = [];
+let infantryBullets = [], heliBullets = [];
+let time = 0, heliDir = 1, heliX = 700, bomberX = W + 100;
+let shakeTime = 0, shakeMag = 0, heliMuzzleFlash = 0;
+
+let allies = [], enemies = [], airborneParatroopers = [];
+let enemyCannon = null;
+let enemyProjectiles = [];
+
+function spawnSoldiers() {
+  allies = []; enemies = []; airborneParatroopers = []; enemyProjectiles = [];
+  for (let i = 0; i < 20; i++) {
+    const spawnX = 30 + Math.random() * 300;
+    allies.push({ x: spawnX, homeX: spawnX, y: GROUND_Y + 12, vx: 0, vy: 0, rot: 0, vRot: 0, facing: 1, dead: false, respawnTimer: 0, fireTimer: Math.random() * 30, breathPhase: Math.random() * Math.PI * 2, state: 'prone', stateTimer: 100 + Math.random() * 300, runTargetX: 0, runDir: -1 });
+  }
+  for (let i = 0; i < 22; i++) {
+    const spawnX = 450 + Math.random() * 380;
+    enemies.push({ x: spawnX, homeX: spawnX, y: GROUND_Y + 12, vx: 0, vy: 0, rot: 0, vRot: 0, facing: -1, dead: false, respawnTimer: 0, fireTimer: Math.random() * 30, breathPhase: Math.random() * Math.PI * 2, state: 'prone', stateTimer: 100 + Math.random() * 300, runTargetX: 0, runDir: 1 });
+  }
+  
+  // Posisi meriam musuh di dekat pohon (X: 820)
+  enemyCannon = { x: 820, y: GROUND_Y + 10, angle: -0.5, fireTimer: 0, recoil: 0 };
+}
+spawnSoldiers();
+
+document.getElementById('fireBtn').addEventListener('click', () => {
+  initAudio();
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+  startHeliSound();
+  fire();
+});
+
+function fire() {
+  if (projectile) return;
+  const rad = params.angle * Math.PI / 180;
+  const pivotX = 150, pivotY = GROUND_Y - 25, barrelLength = 50;
+  const muzzleX = pivotX + Math.cos(rad) * barrelLength;
+  const muzzleY = pivotY - Math.sin(rad) * barrelLength;
+  const sp = params.speed * 0.15;
+
+  projectile = { x: muzzleX, y: muzzleY, vx: Math.cos(rad)*sp, vy: -Math.sin(rad)*sp, trail: [] };
+
+  particles.push({ x: muzzleX, y: muzzleY, vx: 0, vy: 0, life: 0.8, decay: 0.1, size: 25, type: 'fire' });
+  explosions.push({ x: muzzleX, y: muzzleY, t: 0, maxT: 10, size: 20, isFlash: true });
+  playShootSound();
+}
+
+// ================= LEDAKAN & PARTIKEL =================
+function createBigExplosion(x, y) {
+  shakeTime = 35; shakeMag = 18;
+  playMegaExplosionSound();
+  explosions.push({ x, y, t: 0, maxT: 25, size: 80, isShockwave: true });
+
+  for (let i = 0; i < 80; i++) {
+    const angle = Math.random() * Math.PI * 2, speed = 2 + Math.random() * 12;
+    particles.push({ x, y, vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed - 2, life: 1.0, decay: 0.015 + Math.random() * 0.025, size: 25 + Math.random() * 35, type: 'fire' });
+  }
+  for (let i = 0; i < 40; i++) {
+    particles.push({ x: x + (Math.random() - 0.5) * 40, y: y + (Math.random() - 0.5) * 40, vx: (Math.random() - 0.5) * 4, vy: -2 - Math.random() * 5, life: 1.0, decay: 0.005 + Math.random() * 0.01, size: 30 + Math.random() * 40, type: 'smoke' });
+  }
+  for (let i = 0; i < 60; i++) {
+    const angle = Math.random() * Math.PI * 2, speed = 8 + Math.random() * 15;
+    particles.push({ x, y, vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed - 5, life: 1.0, decay: 0.02, size: 2 + Math.random() * 4, type: 'spark' });
+  }
+
+  const allUnits = [...allies, ...enemies];
+  allUnits.forEach(u => {
+    if (u.dead) return;
+    const dx = u.x - x, dy = u.y - y, dist = Math.hypot(dx, dy);
+    const isProne = u.state === 'prone';
+    const hitRadius = isProne ? 150 : 180;
+    if (dist < hitRadius) {
+      u.dead = true; u.respawnTimer = 0;
+      u.vx = (dx / dist) * (20 + Math.random() * 15) * (1 - dist/hitRadius);
+      u.vy = -18 - Math.random() * 12;
+      u.vRot = (Math.random() - 0.5) * 0.8;
+      createBloodBurst(u.x, u.y - 20, 40);
+      playScreamSound();
+    }
+  });
+}
+
+function createBloodBurst(x, y, count) {
+  for (let i = 0; i < count; i++) {
+    const angle = Math.random() * Math.PI * 2, speed = 2 + Math.random() * 6;
+    bloodParticles.push({ x, y, vx: Math.cos(angle)*speed, vy: Math.sin(angle)*speed-2, life: 1.0, decay: 0.02+Math.random()*0.02, size: 2+Math.random()*4, color: Math.random()>0.5?'#cc0000':'#ff0000' });
+  }
+  bloodStains.push({ x, y: GROUND_Y + 8, size: 15 + Math.random() * 10, life: 1.0, decay: 0.003 });
+}
+
+// ================= GAMBAR OBJEK =================
+function drawSky() {
+  const g = ctx.createLinearGradient(0, 0, 0, GROUND_Y);
+  g.addColorStop(0, '#87CEEB'); g.addColorStop(1, '#cfe8f7');
+  ctx.fillStyle = g; ctx.fillRect(0, 0, W, GROUND_Y);
+}
+function drawSun() {
+  ctx.beginPath(); ctx.arc(70, 60, 30, 0, Math.PI * 2);
+  ctx.fillStyle = '#ffe066'; ctx.shadowColor = '#ffcc00'; ctx.shadowBlur = 25;
+  ctx.fill(); ctx.shadowBlur = 0;
+}
+function drawCloud(x, y, s) {
+  ctx.fillStyle = 'rgba(255,255,255,0.85)';
+  ctx.beginPath(); ctx.arc(x, y, 18*s, 0, Math.PI*2); ctx.arc(x+22*s, y-6*s, 22*s, 0, Math.PI*2); ctx.arc(x+48*s, y, 16*s, 0, Math.PI*2); ctx.fill();
+}
+function drawGround() {
+  const g = ctx.createLinearGradient(0, GROUND_Y, 0, H);
+  g.addColorStop(0, '#6b8e23'); g.addColorStop(1, '#3d5a1a');
+  ctx.fillStyle = g; ctx.fillRect(0, GROUND_Y, W, H - GROUND_Y);
+  ctx.strokeStyle = '#556b2f'; ctx.lineWidth = 1;
+  for (let i = 0; i < W; i += 6) { ctx.beginPath(); ctx.moveTo(i, GROUND_Y); ctx.lineTo(i + 2, GROUND_Y - 6 - Math.random()*3); ctx.stroke(); }
+
+  bloodStains.forEach(s => {
+    ctx.save(); ctx.globalAlpha = s.life * 0.7;
+    const grd = ctx.createRadialGradient(s.x, s.y, 0, s.x, s.y, s.size);
+    grd.addColorStop(0, '#550000'); grd.addColorStop(1, 'rgba(80,0,0,0)');
+    ctx.fillStyle = grd; ctx.beginPath(); ctx.ellipse(s.x, s.y, s.size, s.size*0.4, 0, 0, Math.PI*2); ctx.fill();
+    ctx.restore();
+  });
+}
+function drawTrees() {
+  const treePositions = [{ x: 700, s: 1.0 }, { x: 780, s: 1.2 }, { x: 850, s: 0.9 }, { x: 620, s: 0.8 }];
+  treePositions.forEach(t => drawTree(t.x, t.s));
+}
+function drawTree(x, s) {
+  ctx.save(); ctx.translate(x, GROUND_Y);
+  ctx.fillStyle = '#5c3a1e'; ctx.fillRect(-6*s, -50*s, 12*s, 50*s);
+  ctx.fillStyle = '#2e6b2e'; ctx.beginPath(); ctx.moveTo(0, -110*s); ctx.lineTo(-35*s, -50*s); ctx.lineTo(35*s, -50*s); ctx.closePath(); ctx.fill();
+  ctx.fillStyle = '#3d8b3d'; ctx.beginPath(); ctx.moveTo(0, -90*s); ctx.lineTo(-30*s, -35*s); ctx.lineTo(30*s, -35*s); ctx.closePath(); ctx.fill();
+  ctx.restore();
+}
+function drawTank() {
+  const x = 150, y = GROUND_Y - 20;
+  ctx.fillStyle = '#2b2b2b';
+  for (let i = 0; i < 4; i++) { ctx.beginPath(); ctx.arc(x - 30 + i*18, y + 20, 9, 0, Math.PI*2); ctx.fill(); }
+  ctx.fillStyle = '#3a5f3a'; ctx.beginPath(); ctx.roundRect(x - 45, y - 5, 90, 25, 6); ctx.fill();
+  ctx.fillStyle = '#2e4a2e'; ctx.fillRect(x - 40, y + 5, 80, 5);
+  ctx.fillStyle = '#4a7a4a'; ctx.beginPath(); ctx.arc(x, y - 5, 18, Math.PI, 0); ctx.fill(); ctx.fillRect(x - 18, y - 5, 36, 8);
+
+  const rad = params.angle * Math.PI / 180, pivotX = x, pivotY = y - 5;
+  ctx.save(); ctx.translate(pivotX, pivotY); ctx.rotate(-rad);
+  ctx.fillStyle = '#2e4a2e'; ctx.fillRect(0, -5, 50, 10); ctx.fillStyle = '#1e3a1e'; ctx.fillRect(45, -6, 8, 12);
+  ctx.restore();
+}
+
+// =========================================================
+// === RENDER MERIAM MUSUH DI DEKAT POHON (MENGHADAP KIRI) ===
+// =========================================================
+function drawEnemyCannon() {
+  if (!enemyCannon) return;
+  
+  ctx.save();
+  ctx.translate(enemyCannon.x, enemyCannon.y);
+
+  // Roda meriam
+  ctx.fillStyle = '#3a2a1a';
+  ctx.beginPath(); ctx.arc(-14, 0, 9, 0, Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc(14, 0, 9, 0, Math.PI*2); ctx.fill();
+
+  // Badan meriam
+  ctx.fillStyle = '#4a3a2a';
+  ctx.fillRect(-18, -14, 36, 14);
+
+  // Laras Meriam (Rotasi tepat menghadap tank ke arah kiri)
+  ctx.save();
+  ctx.translate(0, -10);
+  ctx.rotate(enemyCannon.angle);
+
+  const recoilOffset = enemyCannon.recoil > 0 ? 8 : 0;
+  
+  // Batang laras memanjang ke kiri (nilai X negatif)
+  ctx.fillStyle = '#222';
+  ctx.fillRect(-45 - recoilOffset, -4, 45, 8);
+  ctx.fillRect(-51 - recoilOffset, -6, 6, 12);
+
+  // Efek Muzzle Flash (Muntahan meriam warna api)
+  if (enemyCannon.recoil > 0) {
+      ctx.save();
+      ctx.globalCompositeOperation = 'lighter';
+      const muzzleX = -51 - recoilOffset;
+      const grd = ctx.createRadialGradient(muzzleX, 0, 0, muzzleX, 0, 25);
+      grd.addColorStop(0, 'rgba(255, 255, 200, 1)');
+      grd.addColorStop(0.4, 'rgba(255, 200, 0, 0.8)');
+      grd.addColorStop(1, 'rgba(255, 50, 0, 0)');
+      ctx.fillStyle = grd;
+      ctx.beginPath(); ctx.arc(muzzleX, 0, 25, 0, Math.PI * 2); ctx.fill();
+
+      // Lidah api moncong meriam
+      ctx.fillStyle = 'rgba(255, 230, 50, 0.9)';
+      ctx.beginPath(); 
+      ctx.moveTo(muzzleX, -8); 
+      ctx.lineTo(muzzleX - 18, 0); 
+      ctx.lineTo(muzzleX, 8); 
+      ctx.fill();
+      ctx.restore();
+  }
+
+  ctx.restore();
+  ctx.restore();
+}
+
+function drawFighterPlane() {
+  ctx.save(); ctx.translate(bomberX, 70);
+  ctx.fillStyle = '#8a9ba8'; ctx.beginPath(); ctx.moveTo(40, 0); ctx.lineTo(-20, -6); ctx.lineTo(-50, 0); ctx.lineTo(-20, 6); ctx.closePath(); ctx.fill();
+  ctx.fillStyle = '#6d7f8c'; ctx.beginPath(); ctx.moveTo(5, 0); ctx.lineTo(-5, -18); ctx.lineTo(-20, -18); ctx.lineTo(-15, 0); ctx.closePath(); ctx.fill();
+  ctx.beginPath(); ctx.moveTo(5, 0); ctx.lineTo(-5, 18); ctx.lineTo(-20, 18); ctx.lineTo(-15, 0); ctx.closePath(); ctx.fill();
+  ctx.fillStyle = '#88ccff'; ctx.beginPath(); ctx.ellipse(-10, -2, 8, 4, 0, 0, Math.PI*2); ctx.fill();
+  ctx.restore();
+}
+function drawHelicopter() {
+  ctx.save(); ctx.translate(heliX, 150); ctx.scale(heliDir, 1);
+  ctx.fillStyle = '#4a6741'; ctx.beginPath(); ctx.ellipse(0, 0, 28, 14, 0, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = '#3d5a37'; ctx.fillRect(-45, -4, 20, 8); ctx.beginPath(); ctx.moveTo(-45, -4); ctx.lineTo(-55, -14); ctx.lineTo(-40, -4); ctx.closePath(); ctx.fill();
+  ctx.fillStyle = '#88ccff'; ctx.beginPath(); ctx.ellipse(18, -2, 10, 8, 0, 0, Math.PI*2); ctx.fill();
+  ctx.save(); ctx.translate(0, -14); ctx.rotate(time * 0.8); ctx.strokeStyle = '#333'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(-40, 0); ctx.lineTo(40, 0); ctx.moveTo(0, -5); ctx.lineTo(0, 5); ctx.stroke(); ctx.restore();
+  ctx.save(); ctx.translate(-50, 0); ctx.rotate(time * 1.2); ctx.strokeStyle = '#333'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(0, -10); ctx.lineTo(0, 10); ctx.stroke(); ctx.restore();
+  ctx.fillStyle = '#222'; ctx.fillRect(25, 4, 14, 4);
+  if (heliMuzzleFlash > 0) {
+    ctx.save(); ctx.translate(40, 6); ctx.globalCompositeOperation = 'lighter';
+    const grd = ctx.createRadialGradient(0, 0, 0, 0, 0, 15);
+    grd.addColorStop(0, 'rgba(255, 255, 255, 1)'); grd.addColorStop(0.3, 'rgba(255, 255, 100, 0.8)'); grd.addColorStop(1, 'rgba(255, 100, 0, 0)');
+    ctx.fillStyle = grd; ctx.beginPath(); ctx.arc(0, 0, 15, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle = 'rgba(255, 200, 50, 0.6)'; ctx.beginPath(); ctx.moveTo(0, -5); ctx.lineTo(10, 0); ctx.lineTo(0, 5); ctx.fill();
+    ctx.restore();
+  }
+  ctx.restore();
+}
+function drawTargetPlane() {
+  ctx.save(); ctx.translate(targetX, targetY);
+  ctx.fillStyle = '#9aa5ad'; ctx.beginPath(); ctx.moveTo(-50, 0); ctx.lineTo(30, -8); ctx.lineTo(60, 0); ctx.lineTo(30, 8); ctx.closePath(); ctx.fill();
+  ctx.fillStyle = '#7a8590'; ctx.beginPath(); ctx.moveTo(-10, 0); ctx.lineTo(-5, -22); ctx.lineTo(15, -22); ctx.lineTo(15, 0); ctx.closePath(); ctx.fill();
+  ctx.beginPath(); ctx.moveTo(-10, 0); ctx.lineTo(-5, 22); ctx.lineTo(15, 22); ctx.lineTo(15, 0); ctx.closePath(); ctx.fill();
+  ctx.fillStyle = '#88ccff'; ctx.beginPath(); ctx.ellipse(20, -2, 8, 5, 0, 0, Math.PI*2); ctx.fill();
+  ctx.restore();
+}
+function drawParatrooper(p) {
+  ctx.save();
+  ctx.translate(p.x, p.y);
+  const r = 22 + Math.sin(time * 0.05 + p.id) * 1.5;
+  ctx.fillStyle = '#d94f4f'; ctx.beginPath(); ctx.arc(0, 0, r, Math.PI, 0); ctx.closePath(); ctx.fill();
+  ctx.strokeStyle = '#888'; ctx.lineWidth = 1;
+  for (let i = -2; i <= 2; i++) { ctx.beginPath(); ctx.moveTo(i * 8, 0); ctx.lineTo(0, r + 10); ctx.stroke(); }
+  ctx.fillStyle = '#661111'; ctx.fillRect(-5, r + 10, 10, 14);
+  ctx.fillStyle = '#2c3e50'; ctx.beginPath(); ctx.arc(0, r + 6, 5, 0, Math.PI*2); ctx.fill();
+  ctx.strokeStyle = '#222'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(-2, r + 15); ctx.lineTo(-15, r + 18); ctx.stroke();
+  if (p.fireTimer > 20 && p.fireTimer < 23) { ctx.fillStyle = '#ffcc00'; ctx.beginPath(); ctx.arc(-17, r + 18, 4, 0, Math.PI*2); ctx.fill(); }
+  ctx.restore();
+}
+
+function drawCannonball(p, isEnemy) {
+  if(!p) return;
+
+  ctx.save();
+  ctx.globalCompositeOperation = 'lighter';
+  
+  p.trail.forEach((t, i) => {
+    const alpha = i / p.trail.length;
+    const radius = 9 * alpha;
+    
+    const grd = ctx.createRadialGradient(t.x, t.y, 0, t.x, t.y, radius + 2);
+    if (isEnemy) {
+      grd.addColorStop(0, `rgba(255, 255, 200, ${alpha * 0.9})`);
+      grd.addColorStop(0.4, `rgba(255, 150, 0, ${alpha * 0.8})`);
+      grd.addColorStop(1, `rgba(255, 0, 0, 0)`);
+    } else {
+      grd.addColorStop(0, `rgba(255, 255, 255, ${alpha * 0.9})`);
+      grd.addColorStop(0.5, `rgba(255, 200, 0, ${alpha * 0.8})`);
+      grd.addColorStop(1, `rgba(255, 50, 0, 0)`);
+    }
+    ctx.fillStyle = grd;
+    ctx.beginPath(); ctx.arc(t.x, t.y, radius + 2, 0, Math.PI * 2); ctx.fill();
+  });
+  ctx.restore();
+
+  ctx.save();
+  ctx.globalCompositeOperation = 'lighter';
+  const grd = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, 18);
+  if (isEnemy) {
+    grd.addColorStop(0, 'rgba(255, 255, 255, 1)');
+    grd.addColorStop(0.3, 'rgba(255, 200, 50, 1)');
+    grd.addColorStop(0.6, 'rgba(255, 50, 0, 0.9)');
+    grd.addColorStop(1, 'rgba(100, 0, 0, 0)');
+  } else {
+    grd.addColorStop(0, 'rgba(255, 255, 255, 1)');
+    grd.addColorStop(0.3, 'rgba(255, 255, 100, 1)');
+    grd.addColorStop(0.7, 'rgba(255, 150, 0, 0.9)');
+    grd.addColorStop(1, 'rgba(255, 0, 0, 0)');
+  }
+  ctx.fillStyle = grd;
+  ctx.beginPath(); ctx.arc(p.x, p.y, 18, 0, Math.PI * 2); ctx.fill();
+
+  ctx.fillStyle = '#ffffff';
+  ctx.beginPath(); ctx.arc(p.x, p.y, 5, 0, Math.PI * 2); ctx.fill();
+  ctx.restore();
+}
+
+function drawHeliBullets() {
+  ctx.save(); ctx.globalCompositeOperation = 'lighter';
+  heliBullets.forEach(b => {
+    ctx.beginPath(); ctx.moveTo(b.x, b.y); ctx.lineTo(b.x - b.vx * 3, b.y - b.vy * 3);
+    ctx.strokeStyle = b.color; ctx.lineWidth = 4; ctx.shadowColor = '#ffff00'; ctx.shadowBlur = 10; ctx.stroke();
+    ctx.beginPath(); ctx.arc(b.x, b.y, 2.5, 0, Math.PI * 2); ctx.fillStyle = '#ffffff'; ctx.fill();
+  });
+  ctx.restore();
+}
+
+function drawMuzzleFlash(x, y) {
+  ctx.save(); ctx.translate(x, y); ctx.shadowColor = '#ffcc00'; ctx.shadowBlur = 15;
+  ctx.fillStyle = '#fff8b0'; ctx.beginPath();
+  for (let i = 0; i < 8; i++) {
+    const angle = (i / 8) * Math.PI * 2, r = i % 2 === 0 ? 6 : 2;
+    const px = Math.cos(angle) * r, py = Math.sin(angle) * r;
+    if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+  }
+  ctx.closePath(); ctx.fill(); ctx.restore();
+}
+
+function drawUnit(u, isFiring) {
+  ctx.save(); ctx.translate(u.x, u.y);
+  if (u.dead) {
+    ctx.rotate(u.rot); ctx.globalAlpha = 0.8; ctx.fillStyle = '#661111';
+    ctx.fillRect(-12, -6, 24, 10); ctx.beginPath(); ctx.arc(10, -6, 5, 0, Math.PI*2); ctx.fill();
+    ctx.restore(); return;
+  }
+  ctx.scale(u.facing, 1);
+  if (u.respawnTimer > 0 && u.respawnTimer < 60) ctx.globalAlpha = 0.5 + Math.sin(time * 0.5) * 0.5;
+
+  if (u.state === 'prone') {
+    const breath = Math.sin(u.breathPhase + time * 0.05) * 0.8;
+    ctx.translate(0, breath);
+    ctx.fillStyle = u.isEnemy ? '#8b3a3a' : '#4a6741'; ctx.fillRect(-12, -8, 24, 8);
+    ctx.fillStyle = '#2c3e50'; ctx.beginPath(); ctx.arc(14, -8, 5, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle = '#3a5233'; ctx.beginPath(); ctx.arc(14, -10, 6, Math.PI, 0); ctx.fill();
+    ctx.strokeStyle = '#4a6741'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(8, -6); ctx.lineTo(16, -4); ctx.stroke();
+    ctx.strokeStyle = '#222'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(12, -6); ctx.lineTo(28, -4); ctx.stroke();
+    if (isFiring) drawMuzzleFlash(30, -4);
+    ctx.strokeStyle = '#2c3e50'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(-12, -4); ctx.lineTo(-18, -2); ctx.stroke();
+  } else if (u.state === 'running') {
+    const walkPhase = Math.sin(time * 0.4 + u.homeX) * 4;
+    ctx.strokeStyle = '#2c3e50'; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.moveTo(-3, -4); ctx.lineTo(-5 + walkPhase, 2); ctx.moveTo(3, -4); ctx.lineTo(5 - walkPhase, 2); ctx.stroke();
+    ctx.fillStyle = u.isEnemy ? '#8b3a3a' : '#4a6741'; ctx.fillRect(-5, -18, 10, 14);
+    ctx.fillStyle = '#2c3e50'; ctx.beginPath(); ctx.arc(0, -22, 5, 0, Math.PI*2); ctx.fill();
+    ctx.strokeStyle = '#4a6741'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(3, -14); ctx.lineTo(10, -10); ctx.stroke();
+    ctx.strokeStyle = '#222'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(5, -12); ctx.lineTo(18, -10); ctx.stroke();
+  } else if (u.state === 'standing') {
+    ctx.strokeStyle = '#2c3e50'; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.moveTo(-3, -4); ctx.lineTo(-5, 2); ctx.moveTo(3, -4); ctx.lineTo(5, 2); ctx.stroke();
+    ctx.fillStyle = u.isEnemy ? '#8b3a3a' : '#4a6741'; ctx.fillRect(-5, -18, 10, 14);
+    ctx.fillStyle = '#2c3e50'; ctx.beginPath(); ctx.arc(0, -22, 5, 0, Math.PI*2); ctx.fill();
+    ctx.strokeStyle = '#222'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(5, -12); ctx.lineTo(18, -10); ctx.stroke();
+  }
+  ctx.restore();
+}
+
+function drawEffects() {
+  explosions.forEach(e => {
+    const t = e.t / e.maxT, alpha = 1 - t;
+    if (e.isShockwave) {
+      ctx.strokeStyle = `rgba(255, 255, 255, ${alpha})`; ctx.lineWidth = 5 * alpha;
+      ctx.beginPath(); ctx.arc(e.x, e.y, e.size * t, 0, Math.PI*2); ctx.stroke();
+    } else {
+      const r = e.size * (1 + t * 2);
+      const grd = ctx.createRadialGradient(e.x, e.y, 0, e.x, e.y, r);
+      grd.addColorStop(0, `rgba(255,255,255,${alpha})`); grd.addColorStop(0.3, `rgba(255,255,100,${alpha})`);
+      grd.addColorStop(0.6, `rgba(255,100,0,${alpha})`); grd.addColorStop(1, `rgba(100,0,0,0)`);
+      ctx.fillStyle = grd; ctx.beginPath(); ctx.arc(e.x, e.y, r, 0, Math.PI*2); ctx.fill();
+    }
+  });
+
+  particles.forEach(p => {
+    ctx.save(); ctx.globalAlpha = p.life;
+    if (p.type === 'fire') {
+      const grd = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.size);
+      grd.addColorStop(0, `rgba(255, 255, 200, ${p.life})`); grd.addColorStop(0.4, `rgba(255, 120, 0, ${p.life})`); grd.addColorStop(1, `rgba(255, 0, 0, 0)`);
+      ctx.fillStyle = grd; ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI*2); ctx.fill();
+    } else if (p.type === 'smoke') {
+      ctx.fillStyle = `rgba(20, 20, 20, ${p.life * 0.7})`; ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI*2); ctx.fill();
+    } else if (p.type === 'spark') {
+      ctx.strokeStyle = '#ffffaa'; ctx.lineWidth = p.size;
+      ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(p.x - p.vx, p.y - p.vy); ctx.stroke();
+    }
+    ctx.restore();
+  });
+
+  bloodParticles.forEach(b => {
+    ctx.save(); ctx.globalAlpha = b.life; ctx.fillStyle = b.color;
+    ctx.beginPath(); ctx.arc(b.x, b.y, b.size, 0, Math.PI*2); ctx.fill(); ctx.restore();
+  });
+}
+
+// ================= LOGIKA UTAMA =================
+function update() {
+  time++;
+  if (shakeTime > 0) shakeTime--;
+  if (heliMuzzleFlash > 0) heliMuzzleFlash--;
+
+  heliX += heliDir * 2.8;
+  if (heliX > W - 50 || heliX < 300) heliDir *= -1;
+  if (time % 8 === 0 && heliX > 400) {
+    const allEnemies = enemies.filter(e => !e.dead);
+    if (allEnemies.length > 0) {
+      const target = allEnemies[Math.floor(Math.random() * allEnemies.length)];
+      const dx = target.x - heliX, dy = (target.y - 15) - 150, dist = Math.hypot(dx, dy);
+      heliBullets.push({ x: heliX + heliDir * 40, y: 156, vx: (dx/dist)*12, vy: (dy/dist)*12, color: '#ffff00' });
+      heliMuzzleFlash = 5;
+      playRifleSound();
+    }
+  }
+
+  bomberX -= 3.5;
+  if (bomberX < -100) bomberX = W + 100;
+  else if (!bomb && bomberX < 320 && bomberX > 280) bomb = { x: bomberX, y: 80, vy: 0 };
+
+  if (projectile) {
+    projectile.trail.push({ x: projectile.x, y: projectile.y });
+    if (projectile.trail.length > 25) projectile.trail.shift();
+    projectile.vy += 0.2; projectile.x += projectile.vx; projectile.y += projectile.vy;
+
+    if (time % 2 === 0) {
+        particles.push({ x: projectile.x, y: projectile.y, vx: (Math.random()-0.5)*2, vy: (Math.random()-0.5)*2, life: 0.6, decay: 0.06, size: 4, type: 'fire' });
+    }
+
+    if (Math.hypot(projectile.x - targetX, projectile.y - targetY) < 40) { createBigExplosion(targetX, targetY); projectile = null; }
+    else if (projectile.y > GROUND_Y || projectile.x > W + 50 || projectile.x < -50) {
+      if (projectile.y > GROUND_Y) createBigExplosion(projectile.x, GROUND_Y);
+      projectile = null;
+    }
+  }
+
+  if (bomb) {
+    bomb.x -= 0.5; bomb.vy += 0.25; bomb.y += bomb.vy;
+    if (bomb.y > GROUND_Y - 10) { createBigExplosion(bomb.x, GROUND_Y - 5); bomb = null; }
+  }
+
+  // === UPDATE MERIAM MUSUH DI DEKAT POHON (MENEMBAK TEPAT KE TANK PEMAIN DI KIRI DENGAN PARABOLA API) ===
+  if (enemyCannon) {
+    enemyCannon.fireTimer++;
+    if (enemyCannon.recoil > 0) enemyCannon.recoil--;
+
+    const targetTankX = 150;
+    const targetTankY = GROUND_Y - 25;
+    
+    const cannonPivotX = enemyCannon.x;
+    const cannonPivotY = enemyCannon.y - 10;
+
+    const dx = targetTankX - cannonPivotX; 
+    const dy = cannonPivotY - targetTankY;
+    
+    const speed = 20; 
+    const g = 0.15;   
+
+    const v2 = speed * speed;
+    const disc = v2 * v2 - g * (g * (dx * dx) + 2 * dy * v2);
+    
+    let angleRad = -0.5; 
+    if (disc >= 0) {
+      const tanTheta = (v2 - Math.sqrt(disc)) / (g * Math.abs(dx));
+      angleRad = -Math.atan(tanTheta); 
+    }
+    
+    enemyCannon.angle = angleRad;
+
+    // Frekuensi tembak musuh disesuaikan (setiap 200 frame / ~3.3 detik)
+    if (enemyCannon.fireTimer > 200) {
+      enemyCannon.fireTimer = 0;
+      enemyCannon.recoil = 12;
+
+      const barrelLen = 51;
+      const muzzleX = cannonPivotX + Math.cos(angleRad) * barrelLen;
+      const muzzleY = cannonPivotY + Math.sin(angleRad) * barrelLen;
+
+      const vx = Math.cos(angleRad) * speed;
+      const vy = Math.sin(angleRad) * speed;
+
+      enemyProjectiles.push({
+        x: muzzleX,
+        y: muzzleY,
+        vx: vx,
+        vy: vy,
+        trail: []
+      });
+
+      for (let i = 0; i < 8; i++) {
+        particles.push({ x: muzzleX, y: muzzleY, vx: Math.cos(angleRad)*(2+Math.random()*4), vy: Math.sin(angleRad)*(2+Math.random()*4), life: 0.8, decay: 0.1, size: 14, type: 'fire' });
+      }
+      playShootSound();
+    }
+  }
+
+  // === UPDATE PROYEKTIL MERIAM MUSUH DENGAN JALUR API ===
+  for (let i = enemyProjectiles.length - 1; i >= 0; i--) {
+    let p = enemyProjectiles[i];
+    
+    p.trail.push({x: p.x, y: p.y});
+    if(p.trail.length > 40) p.trail.shift(); 
+    
+    p.vy += 0.15; 
+    p.x += p.vx; 
+    p.y += p.vy;
+
+    if (time % 2 === 0) {
+        particles.push({ x: p.x, y: p.y, vx: (Math.random()-0.5)*2, vy: (Math.random()-0.5)*2, life: 0.6, decay: 0.06, size: 5, type: 'fire' });
+    }
+
+    if (Math.hypot(p.x - 150, p.y - (GROUND_Y - 25)) < 40) {
+        createBigExplosion(150, GROUND_Y - 25);
+        enemyProjectiles.splice(i, 1);
+        continue;
+    }
+
+    if (p.y > GROUND_Y) {
+        createBigExplosion(p.x, GROUND_Y);
+        enemyProjectiles.splice(i, 1);
+        continue;
+    }
+
+    for (let a of allies) {
+      if (!a.dead && Math.hypot(p.x - a.x, p.y - (a.y - 10)) < 20) {
+        createBigExplosion(p.x, p.y);
+        enemyProjectiles.splice(i, 1);
+        break;
+      }
+    }
+  }
+
+  const allUnits = [...allies, ...enemies];
+  allUnits.forEach(u => {
+    if (u.dead) return;
+    u.stateTimer--;
+    if (u.state === 'prone') {
+      if (u.stateTimer <= 0) {
+        u.state = 'running'; u.stateTimer = 40 + Math.random() * 30;
+        u.runTargetX = u.x - (u.facing * (40 + Math.random() * 40)); u.runDir = u.facing > 0 ? -1 : 1;
+      }
+    } else if (u.state === 'running') {
+      u.x += u.runDir * 2.5;
+      if ((u.runDir < 0 && u.x <= u.runTargetX) || (u.runDir > 0 && u.x >= u.runTargetX) || u.stateTimer <= 0) {
+        u.state = 'standing'; u.stateTimer = 15;
+      }
+    } else if (u.state === 'standing') {
+      if (u.stateTimer <= 0) {
+        u.state = 'prone'; u.stateTimer = 150 + Math.random() * 250; u.fireTimer = 0;
+      }
+    }
+  });
+
+  allUnits.forEach(u => {
+    if (u.dead || u.state !== 'prone') return;
+    u.fireTimer++;
+    if (u.fireTimer > 15 + Math.random() * 30) {
+      u.fireTimer = 0;
+      const isAlly = allies.includes(u);
+      const targets = isAlly ? enemies.filter(e => !e.dead) : allies.filter(a => !a.dead);
+      if (targets.length > 0) {
+        const target = targets[Math.floor(Math.random() * targets.length)];
+        const startX = u.x + (u.facing * 20), startY = u.y - 5;
+        const dx = target.x - startX, dy = (target.y - 10) - startY, dist = Math.hypot(dx, dy);
+        const color = isAlly ? 'rgba(150, 255, 100, 0.9)' : 'rgba(255, 150, 100, 0.9)';
+        infantryBullets.push({ x: startX, y: startY, vx: (dx/dist)*8, vy: (dy/dist)*8, color, isAlly });
+        playRifleSound();
+      }
+    }
+  });
+
+  if (time % 400 === 0) {
+    for(let i=0; i<3; i++) {
+      airborneParatroopers.push({ id: Math.random(), x: targetX + 20 + (Math.random()-0.5)*40, y: targetY + 30, vy: 0.5 + Math.random()*0.5, state: 'falling', fireTimer: Math.random()*30 });
+    }
+  }
+
+  for (let i = airborneParatroopers.length - 1; i >= 0; i--) {
+    let p = airborneParatroopers[i];
+    if (p.state === 'falling') {
+      p.y += p.vy;
+      p.fireTimer++;
+      if (p.fireTimer > 25) {
+        p.fireTimer = 0;
+        const aliveAllies = allies.filter(a => !a.dead);
+        if(aliveAllies.length > 0) {
+            const target = aliveAllies[Math.floor(Math.random() * aliveAllies.length)];
+            const startX = p.x - 15, startY = p.y + 15;
+            const dx = target.x - startX, dy = (target.y - 10) - startY, dist = Math.hypot(dx, dy);
+            infantryBullets.push({ x: startX, y: startY, vx: (dx/dist)*8, vy: (dy/dist)*8, color: 'rgba(255, 100, 100, 0.9)', isAlly: false });
+            playRifleSound();
+        }
+      }
+      if (p.y > GROUND_Y - 20) {
+        enemies.push({ x: p.x, homeX: p.x, y: GROUND_Y + 12, vx: 0, vy: 0, rot: 0, vRot: 0, facing: -1, dead: false, respawnTimer: 0, fireTimer: Math.random() * 30, breathPhase: Math.random() * Math.PI * 2, state: 'running', stateTimer: 60, runTargetX: 550 + Math.random() * 150, runDir: 1, isEnemy: true });
+        airborneParatroopers.splice(i, 1);
+      }
+    }
+  }
+
+  for (let i = infantryBullets.length - 1; i >= 0; i--) {
+    const b = infantryBullets[i]; b.x += b.vx; b.y += b.vy;
+    if (b.y > GROUND_Y || b.x < 0 || b.x > W) { infantryBullets.splice(i, 1); continue; }
+    let hit = false;
+    const targetList = b.isAlly ? enemies : allies;
+    for (let u of targetList) {
+      if (!u.dead) {
+        const isProne = u.state === 'prone';
+        const hitRadius = isProne ? 8 : 14;
+        const yOffset = isProne ? -6 : -12;
+        if (Math.hypot(b.x - u.x, b.y - (u.y + yOffset)) < hitRadius) {
+          u.dead = true; u.respawnTimer = 0; u.vy = -3; u.vx = b.vx * 0.2;
+          createBloodBurst(u.x, u.y - 15, 15); playScreamSound(); hit = true; break;
+        }
+      }
+    }
+    if (hit) infantryBullets.splice(i, 1);
+  }
+
+  for (let i = heliBullets.length - 1; i >= 0; i--) {
+    const b = heliBullets[i]; b.x += b.vx; b.y += b.vy;
+    if (b.y > GROUND_Y - 5 || b.x < 0 || b.x > W) {
+       if (b.y > GROUND_Y - 5) explosions.push({ x: b.x, y: GROUND_Y, t: 0, maxT: 15, size: 8 });
+       heliBullets.splice(i, 1); continue;
+    }
+    for (let u of enemies) {
+      if (!u.dead) {
+        const isProne = u.state === 'prone';
+        const hitRadius = isProne ? 10 : 16;
+        const yOffset = isProne ? -6 : -12;
+        if (Math.hypot(b.x - u.x, b.y - (u.y + yOffset)) < hitRadius) {
+          u.dead = true; u.respawnTimer = 0; u.vy = -3; u.vx = b.vx * 0.5;
+          createBloodBurst(u.x, u.y - 15, 20); playScreamSound(); heliBullets.splice(i, 1); break;
+        }
+      }
+    }
+  }
+
+  allUnits.forEach(u => {
+    if (u.dead) {
+      u.x += u.vx; u.y += u.vy; u.vy += 0.6; u.vx *= 0.98; u.rot += u.vRot;
+      if (u.y > GROUND_Y + 10) {
+        u.y = GROUND_Y + 10; u.vy *= -0.3; u.vx *= 0.5; u.vRot *= 0.5;
+        if(Math.abs(u.vy) < 1) u.vy = 0;
+      }
+      u.respawnTimer++;
+      if (u.respawnTimer > 180) {
+        u.dead = false; u.x = u.homeX; u.y = GROUND_Y + 12;
+        u.vx = 0; u.vy = 0; u.rot = 0; u.vRot = 0; u.fireTimer = 0;
+        u.state = 'prone'; u.stateTimer = 100 + Math.random() * 200;
+      }
+    }
+  });
+
+  for (let i = particles.length - 1; i >= 0; i--) {
+    const p = particles[i]; p.x += p.vx; p.y += p.vy;
+    if (p.type === 'spark') p.vy += 0.3;
+    else if (p.type === 'fire') { p.vx *= 0.95; p.vy *= 0.95; p.size *= 0.98; }
+    else if (p.type === 'smoke') { p.vy *= 0.98; p.size *= 1.02; }
+    p.life -= p.decay; if (p.life <= 0) particles.splice(i, 1);
+  }
+  for (let i = bloodParticles.length - 1; i >= 0; i--) {
+    const b = bloodParticles[i]; b.x += b.vx; b.y += b.vy; b.vy += 0.4; b.vx *= 0.95; b.life -= b.decay;
+    if (b.life <= 0 || b.y > GROUND_Y + 15) bloodParticles.splice(i, 1);
+  }
+  for (let i = bloodStains.length - 1; i >= 0; i--) {
+    bloodStains[i].life -= bloodStains[i].decay; if (bloodStains[i].life <= 0) bloodStains.splice(i, 1);
+  }
+  if (bloodStains.length > 30) bloodStains.shift();
+
+  explosions.forEach(e => e.t++);
+  explosions = explosions.filter(e => e.t <= e.maxT);
+}
+
+// ================= RENDER =================
+function render() {
+  ctx.clearRect(0, 0, W, H);
+  ctx.save();
+  if (shakeTime > 0) {
+    ctx.translate((Math.random() - 0.5) * shakeMag, (Math.random() - 0.5) * shakeMag);
+  }
+
+  drawSky(); drawSun(); drawCloud(200, 80, 1); drawCloud(500, 50, 0.8); drawCloud(750, 100, 1.1);
+  drawFighterPlane(); drawHelicopter(); drawTrees(); drawGround(); drawTank();
+  drawEnemyCannon();
+  drawTargetPlane();
+  airborneParatroopers.forEach(drawParatrooper);
+
+  if (projectile) drawCannonball(projectile, false);
+  enemyProjectiles.forEach(p => drawCannonball(p, true));
+
+  [...allies, ...enemies].forEach(u => {
+    drawUnit(u, u.state === 'prone' && u.fireTimer > 10 && u.fireTimer < 13);
+  });
+
+  drawHeliBullets();
+  drawEffects();
+  ctx.restore();
+
+  const totalAllies = allies.filter(a => !a.dead).length;
+  const totalEnemies = enemies.filter(e => !e.dead).length + airborneParatroopers.length;
+
+  ctx.fillStyle = 'rgba(15, 20, 30, 0.8)';
+  ctx.beginPath(); ctx.roundRect(15, 15, 250, 85, 8); ctx.fill();
+  ctx.strokeStyle = '#445566'; ctx.lineWidth = 1; ctx.stroke();
+
+  ctx.fillStyle = '#ffcc66'; ctx.font = 'bold 13px monospace';
+  ctx.fillText(`Sudut     : ${params.angle}°`, 30, 38);
+  ctx.fillText(`Kecepatan : ${params.speed} m/s`, 30, 56);
+  ctx.fillText(`Target    : (${params.dx}, ${params.dy}) m`, 30, 74);
+
+  const barW = 220, barH = 16, barX = W - barW - 25, barY = 30;
+  ctx.fillStyle = 'rgba(15, 20, 30, 0.8)';
+  ctx.beginPath(); ctx.roundRect(barX - 15, 15, barW + 30, 65, 8); ctx.fill();
+  ctx.strokeStyle = '#445566'; ctx.lineWidth = 1; ctx.stroke();
+
+  ctx.fillStyle = '#222'; ctx.beginPath(); ctx.roundRect(barX, barY, barW, barH, 4); ctx.fill();
+  const allyRatio = totalAllies / (totalAllies + totalEnemies || 1);
+  ctx.fillStyle = '#4da6ff'; ctx.beginPath(); ctx.roundRect(barX, barY, barW * allyRatio, barH, 4); ctx.fill();
+  ctx.fillStyle = '#ff4d4d'; ctx.beginPath(); ctx.roundRect(barX + barW * allyRatio, barY, barW * (1 - allyRatio), barH, 4); ctx.fill();
+
+  ctx.fillStyle = '#fff'; ctx.font = 'bold 11px monospace';
+  ctx.textAlign = 'center';
+  ctx.fillText(`SEKUTU (${totalAllies})   VS   MUSUH (${totalEnemies})`, barX + barW / 2, barY + barH + 18);
+  ctx.textAlign = 'left';
+
+  requestAnimationFrame(() => { update(); render(); });
+}
+
+render();
+
+// ================= KUIS FISIKA (BENAR / SALAH) =================
+const quizData = [
+  {
+    q: "1. Pada gerak parabola proyektil meriam, komponen kecepatan horizontal (vx) bernilai tetap (konstan) jika hambatan udara diabaikan.",
+    answer: true,
+    explanation: "Benar! Pada arah horizontal tidak ada percepatan (kecuali hambatan udara), sehingga vx konstan."
+  },
+  {
+    q: "2. Bom yang dijatuhkan dari pesawat pengebom bergerak lurus vertikal ke bawah tanpa dipengaruhi oleh gerak pesawat.",
+    answer: false,
+    explanation: "Salah! Bom memiliki kecepatan awal horizontal yang sama dengan kecepatan pesawat, sehingga geraknya membentuk lintasan parabola."
+  },
+  {
+    q: "3. Di titik tertinggi lintasan gerak parabola peluru meriam, komponen kecepatan vertikal peluru bernilai nol (vy = 0).",
+    answer: true,
+    explanation: "Benar! Sebelum peluru mulai turun kembali ke bumi, kecepatannya pada arah vertikal sesaat bernilai nol."
+  },
+  {
+    q: "4. Waktu total yang dibutuhkan peluru meriam untuk melayang di udara sampai kembali ke tanah tidak bergantung pada sudut elevasinya.",
+    answer: false,
+    explanation: "Salah! Waktu total penerbangan sangat bergantung pada besar sudut elevasi dan kecepatan awal peluru."
+  },
+  {
+    q: "5. Pada peristiwa gerak jatuh bebas, waktu jatuh suatu benda tidak bergantung pada massa benda tersebut.",
+    answer: true,
+    explanation: "Benar! Di ruang hampa (atau bila hambatan udara diabaikan), semua benda jatuh dengan percepatan gravitasi yang sama besarnya."
+  }
+];
+
+let userScore = 0;
+const answeredStatus = {};
+
+function openQuiz() {
+  renderQuizQuestions();
+  document.getElementById('quizModal').style.display = 'flex';
+}
+
+function closeQuiz() {
+  document.getElementById('quizModal').style.display = 'none';
+}
+
+function renderQuizQuestions() {
+  const container = document.getElementById('quizQuestionsContainer');
+  container.innerHTML = '';
+  
+  quizData.forEach((item, index) => {
+    const isAnswered = answeredStatus[index] !== undefined;
+    const userAns = answeredStatus[index];
+    
+    let html = `
+      <div class="question-box">
+        <p><strong>Soal ${index + 1}:</strong> ${item.q}</p>
+        <div class="quiz-options" id="opt-group-${index}">
+          <button class="true-btn" ${isAnswered ? 'disabled' : ''} onclick="answerQuiz(${index}, true)">BENAR</button>
+          <button class="false-btn" ${isAnswered ? 'disabled' : ''} onclick="answerQuiz(${index}, false)">SALAH</button>
+        </div>
+        <div class="feedback" id="feedback-${index}">
+          ${isAnswered ? (userAns === item.answer ? '<span style="color:#4ade80;">✔ Benar! ' + item.explanation + '</span>' : '<span style="color:#f87171;">✖ Salah. ' + item.explanation + '</span>') : ''}
+        </div>
+      </div>
+    `;
+    container.innerHTML += html;
+  });
+  
+  document.getElementById('quizScoreText').textContent = `Skor: ${userScore} / ${quizData.length}`;
+}
+
+function answerQuiz(index, choice) {
+  if (answeredStatus[index] !== undefined) return;
+  
+  answeredStatus[index] = choice;
+  if (choice === quizData[index].answer) {
+    userScore++;
+  }
+  renderQuizQuestions();
+}
+
+document.getElementById('quizBtn').addEventListener('click', () => {
+  openQuiz();
+});
+</script>
+</body>
+</html>
